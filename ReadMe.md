@@ -1,5 +1,6 @@
 ## Run the Project:
 
+This repo uses jdk version 21.
 ````
 mvn clean spring-boot:run
 ````

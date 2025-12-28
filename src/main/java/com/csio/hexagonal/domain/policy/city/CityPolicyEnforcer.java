@@ -1,9 +1,9 @@
 
-ackage com.csio.hexagonal.domain.policy.city;
+package com.csio.hexagonal.domain.policy.city;
 
 import com.csio.hexagonal.domain.exception.DuplicateCityException;
 import com.csio.hexagonal.domain.model.City;
-import com.csio.hexagonal.domain.service.CityUniquenessChecker;
+import com.csio.hexagonal.domain.policy.city.CityPolicy;
 import java.util.List;
 import org.springframework.stereotype.Component;
 

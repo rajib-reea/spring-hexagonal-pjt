@@ -5,7 +5,7 @@ import com.csio.hexagonal.application.port.out.CityOutPort;
 import com.csio.hexagonal.application.usecase.CreateCityCommand;
 import com.csio.hexagonal.infrastructure.rest.response.city.CityResponse;
 import com.csio.hexagonal.domain.model.City;
-import com.csio.hexagonal.domain.service.CityUniquenessChecker;
+import com.csio.hexagonal.domain.policy.city.CityPolicy;
 import com.csio.hexagonal.domain.vo.CityId;
 import com.csio.hexagonal.domain.vo.State;
 import org.springframework.stereotype.Service;
@@ -15,11 +15,11 @@ import org.springframework.stereotype.Service;
 public class CityService implements CommandUseCase<CreateCityCommand, CityResponse>  {
 
     private final CityOutPort cityOutPort;
-    private final CityUniquenessChecker checker;
+    private final CityPolicy cityPolicy;
 
-    public CityService(CityOutPort cityOutPort, CityUniquenessChecker checker) {
+    public CityService(CityOutPort cityOutPort, CityPolicy cityPolicy) {
         this.cityOutPort = cityOutPort;
-        this.checker = checker;
+        this.cityPolicy = cityPolicy;
     }
 
     @Override
@@ -29,7 +29,7 @@ public class CityService implements CommandUseCase<CreateCityCommand, CityRespon
                 command.name(),
                 new State(command.state())
         );
-        checker.ensureUnique(city, cityOutPort.findAll());
+        cityPolicy.ensureUnique(city, cityOutPort.findAll());
         City savedCity = cityOutPort.save(city);
         //return new CityResponse(city.name(), city.state());
         return new CityResponse(

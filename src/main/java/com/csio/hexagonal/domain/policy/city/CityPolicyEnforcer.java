@@ -1,5 +1,5 @@
 
-package com.csio.hexagonal.domain.service.impl;
+ackage com.csio.hexagonal.domain.policy.city;
 
 import com.csio.hexagonal.domain.exception.DuplicateCityException;
 import com.csio.hexagonal.domain.model.City;
@@ -8,7 +8,7 @@ import java.util.List;
 import org.springframework.stereotype.Component;
 
 @Component
-public class CityUniquenessCheckerImpl implements CityUniquenessChecker {
+public class CityPolicyEnforcer implements CityPolicy {
 
     @Override
     public void ensureUnique(City city, List<City> existingCities) {

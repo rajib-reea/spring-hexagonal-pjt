@@ -14,11 +14,11 @@ import org.springframework.stereotype.Service;
 @Service
 public class CityService implements CommandUseCase<CreateCityCommand, CityResponse>  {
 
-    private final CityOutPort repository;
+    private final CityOutPort cityOutPort;
     private final CityUniquenessChecker checker;
 
-    public CityService(CityOutPort repository, CityUniquenessChecker checker) {
-        this.repository = repository;
+    public CityService(CityOutPort cityOutPort, CityUniquenessChecker checker) {
+        this.cityOutPort = cityOutPort;
         this.checker = checker;
     }
 
@@ -29,8 +29,8 @@ public class CityService implements CommandUseCase<CreateCityCommand, CityRespon
                 command.name(),
                 new State(command.state())
         );
-        checker.ensureUnique(city, repository.findAll());
-        City savedCity = repository.save(city);
+        checker.ensureUnique(city, cityOutPort.findAll());
+        City savedCity = cityOutPort.save(city);
         //return new CityResponse(city.name(), city.state());
         return new CityResponse(
                 savedCity.id().value(),     // uid

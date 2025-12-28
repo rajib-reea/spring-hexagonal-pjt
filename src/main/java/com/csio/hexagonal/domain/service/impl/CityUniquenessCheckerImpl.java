@@ -5,10 +5,9 @@ import com.csio.hexagonal.domain.exception.DuplicateCityException;
 import com.csio.hexagonal.domain.model.City;
 import com.csio.hexagonal.domain.service.CityUniquenessChecker;
 import java.util.List;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 
-
-@Service
+@Component
 public class CityUniquenessCheckerImpl implements CityUniquenessChecker {
 
     @Override

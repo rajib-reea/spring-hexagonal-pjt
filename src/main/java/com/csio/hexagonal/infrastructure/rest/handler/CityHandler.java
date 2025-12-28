@@ -17,6 +17,8 @@ public class CityHandler {
 
     private final CommandUseCase<CreateCityCommand, CityResponse> cityCommandUseCase;
     private final CityRestMapper mapper;
+     private final String entityName = "Account";
+
 
     public CityHandler(
             CommandUseCase<CreateCityCommand, CityResponse> cityCommandUseCase,

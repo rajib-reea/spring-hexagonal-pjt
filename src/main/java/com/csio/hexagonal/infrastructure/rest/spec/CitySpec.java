@@ -1,6 +1,6 @@
-package com.csio.hexagonal.infrastructure.rest.docs.city;
+package com.csio.hexagonal.infrastructure.rest.spec;
 
-public class CityOperationMessage {
+public class CitySpec{
 
     public static final String ENTITY = "city";
 

@@ -1,4 +1,4 @@
-package com.csio.hexagonal.infrastructure.rest.in.adaptor;
+package com.csio.hexagonal.infrastructure.rest.handler;
 
 import com.csio.hexagonal.application.port.in.CreateCityUseCase;
 import com.csio.hexagonal.infrastructure.rest.spec.CitySpec;
@@ -9,11 +9,14 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
-// import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.reactive.function.server.ServerRequest;
+import org.springframework.web.reactive.function.server.ServerResponse;
+import reactor.core.publisher.Mono;
+import org.springframework.stereotype.Component;
 
-@RestController
-@RequestMapping("/cities")
+
+@Component
 public class CityHandler {
 
     private final CreateCityUseCase useCase;
@@ -28,22 +31,11 @@ public class CityHandler {
         summary = CitySpec.CREATE_SUMMARY,
         description = CitySpec.CREATE_DESCRIPTION
     )
-    @PostMapping
-    public void create(
-        @RequestBody(
-            description = CitySpec.CREATE_DESCRIPTION,
-            required = true,
-            content = @Content(
-                schema = @Schema(implementation = CreateCityRequest.class),
-                examples = @ExampleObject(
-                    name = CitySpec.CREATE_EXAMPLE_NAME,
-                    description = CitySpec.CREATE_EXAMPLE_DESCRIPTION,
-                    value = CitySpec.CREATE_EXAMPLE_VALUE
-                )
-            )
-        )
-       @org.springframework.web.bind.annotation.RequestBody CreateCityRequest request
-    ) {
-        useCase.create(mapper.toCommand(request));
+    public Mono<ServerResponse> createCity(ServerRequest request) {
+
+        return request.bodyToMono(CreateCityRequest.class)
+                .map(mapper::toCommand)
+                .doOnNext(useCase::create)
+                .then(ServerResponse.ok().build());
     }
 }

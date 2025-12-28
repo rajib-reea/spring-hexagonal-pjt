@@ -13,13 +13,13 @@ public class CityOperationMessage {
 
     // Description Constants
     public static final String CREATE_DESCRIPTION =
-            "Create a new " + ENTITY + " with the provided name and state";
+            "Create a new " + ENTITY + " with the provided details";
     public static final String GET_DESCRIPTION =
             "Retrieve " + ENTITY + " details using its unique identifier";
     public static final String GET_ALL_DESCRIPTION =
             "Retrieve a paginated list of " + ENTITY + " entries";
     public static final String UPDATE_DESCRIPTION =
-            "Update an existing " + ENTITY + " with new details";
+            "Update an existing " + ENTITY + " with the provided details";
     public static final String DELETE_DESCRIPTION =
             "Delete a " + ENTITY + " using its unique identifier";
 

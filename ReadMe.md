@@ -44,7 +44,7 @@ city-service
 └── src
     └── main
         └── java
-            └── dev.educosta
+            └── com.csio.hexagonal
                 ├── CityServiceApplication.java
                 │
                 ├── domain
@@ -102,10 +102,10 @@ city-service
 
 ````
 City (Aggregate Root)
-package dev.educosta.domain.model;
+package com.csio.hexagonal.domain.model;
 
-import dev.educosta.domain.vo.Id;
-import dev.educosta.domain.vo.State;
+import com.csio.hexagonal.domain.vo.Id;
+import com.csio.hexagonal.domain.vo.State;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -156,9 +156,9 @@ public class City {
 
 Address (Entity inside aggregate)
 
-package dev.educosta.domain.model;
+package com.csio.hexagonal.domain.model;
 
-import dev.educosta.domain.vo.State;
+import com.csio.hexagonal.domain.vo.State;
 
 public class Address {
 

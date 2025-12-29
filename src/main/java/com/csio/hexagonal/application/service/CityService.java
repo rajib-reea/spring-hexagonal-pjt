@@ -9,8 +9,10 @@ import com.csio.hexagonal.domain.vo.CityId;
 import com.csio.hexagonal.domain.vo.State;
 import com.csio.hexagonal.infrastructure.rest.response.city.CityResponse;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
-import java.util.concurrent.CompletableFuture;
+import java.util.List;
 import java.util.concurrent.Executor;
 
 @Service
@@ -19,15 +21,17 @@ public class CityService implements CommandUseCase<CreateCityCommand, CityRespon
     private final CityOutPort cityOutPort;
     private final CityPolicy cityPolicy;
     private final Executor cpuExecutor;
+    private final Executor virtualExecutor;
 
-    public CityService(CityOutPort cityOutPort, CityPolicy cityPolicy, Executor cpuExecutor) {
+    public CityService(CityOutPort cityOutPort, CityPolicy cityPolicy, Executor cpuExecutor, Executor virtualExecutor) {
         this.cityOutPort = cityOutPort;
         this.cityPolicy = cityPolicy;
         this.cpuExecutor = cpuExecutor;
+        this.virtualExecutor = virtualExecutor;
     }
 
     @Override
-    public CityResponse create(CreateCityCommand command, String token) {
+    public Mono<CityResponse> create(CreateCityCommand command, String token) {
 
         City city = new City(
                 CityId.newId(),
@@ -35,17 +39,17 @@ public class CityService implements CommandUseCase<CreateCityCommand, CityRespon
                 new State(command.state())
         );
 
-        var existing = cityOutPort.findAll();
-        // Run policy checks on the cpuExecutor to avoid using virtual threads for CPU work
-        CompletableFuture.runAsync(() -> cityPolicy.ensureUnique(city, existing), cpuExecutor).join();
+        List<City> existing = cityOutPort.findAll();
 
-        City savedCity = cityOutPort.save(city, token);
-
-        return new CityResponse(
-                savedCity.getId().value().toString(), // UUID → String
-                savedCity.isActive(),
-                savedCity.getName(),
-                savedCity.getState().value()
-        );
+        return Mono.fromRunnable(() -> cityPolicy.ensureUnique(city, existing))
+                .subscribeOn(Schedulers.fromExecutor(cpuExecutor))
+                .then(Mono.fromCallable(() -> cityOutPort.save(city, token))
+                        .subscribeOn(Schedulers.fromExecutor(virtualExecutor)))
+                .map(savedCity -> new CityResponse(
+                        savedCity.getId().value().toString(),
+                        savedCity.isActive(),
+                        savedCity.getName(),
+                        savedCity.getState().value()
+                ));
     }
 }

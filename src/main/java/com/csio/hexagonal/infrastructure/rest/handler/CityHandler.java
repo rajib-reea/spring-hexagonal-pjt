@@ -106,8 +106,8 @@ public class CityHandler {
             .doOnNext(req -> log.info("Received CreateCityRequest: {}", req))
             .map(req -> new CreateCityCommand(req.name(), req.state()))
             .doOnNext(cmd -> log.info("Mapped to CreateCityCommand: {}", cmd))
-            // Offload the blocking create(...) to virtual threads so the event loop isn't blocked
-            .flatMap(cmd -> reactor.core.publisher.Mono.fromCallable(() -> commandUseCase.create(cmd, token))
+                // Use reactive create (already returns Mono) and ensure it's subscribed on virtualExecutor
+                .flatMap(cmd -> commandUseCase.create(cmd, token)
                     .subscribeOn(Schedulers.fromExecutor(virtualExecutor)))
             .doOnNext(res -> log.info("Service returned response: {}", res))
             .flatMap(res -> ServerResponse.ok().bodyValue(res));

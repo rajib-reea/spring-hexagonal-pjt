@@ -103,7 +103,7 @@ java -jar target/*.jar
 
 Feel free to edit this README; let me know if you want the tree in a different format.
 
-**Call Flow (Swagger request → DB save)**
+## Call Flow (Swagger request → DB save)**
 
 - **Client → Swagger UI / HTTP POST:** send POST /api/v1/city with example body (see [src/main/java/com/csio/hexagonal/infrastructure/rest/spec/CitySpec.java](src/main/java/com/csio/hexagonal/infrastructure/rest/spec/CitySpec.java)).
 - **Router:** request routed by [src/main/java/com/csio/hexagonal/infrastructure/config/router/operation/city/CityRouter.java](src/main/java/com/csio/hexagonal/infrastructure/config/router/operation/city/CityRouter.java) to the handler.

@@ -55,6 +55,9 @@ import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
+import org.springframework.beans.factory.annotation.Qualifier;
+import java.util.concurrent.Executor;
+import reactor.core.scheduler.Schedulers;
 import org.springframework.stereotype.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -68,11 +71,14 @@ public class CityHandler {
     private static final Logger log = LoggerFactory.getLogger(CityHandler.class);
 
     private final CommandUseCase<CreateCityCommand, CityResponse> commandUseCase;
+    private final Executor virtualExecutor;
 
     public CityHandler(
-            CommandUseCase<CreateCityCommand, CityResponse> commandUseCase
+            CommandUseCase<CreateCityCommand, CityResponse> commandUseCase,
+            @Qualifier("virtualExecutor") Executor virtualExecutor
     ) {
         this.commandUseCase = commandUseCase;
+        this.virtualExecutor = virtualExecutor;
     }
 
     @Operation(
@@ -100,7 +106,9 @@ public class CityHandler {
             .doOnNext(req -> log.info("Received CreateCityRequest: {}", req))
             .map(req -> new CreateCityCommand(req.name(), req.state()))
             .doOnNext(cmd -> log.info("Mapped to CreateCityCommand: {}", cmd))
-            .map(cmd -> commandUseCase.create(cmd, token))
+            // Offload the blocking create(...) to virtual threads so the event loop isn't blocked
+            .flatMap(cmd -> reactor.core.publisher.Mono.fromCallable(() -> commandUseCase.create(cmd, token))
+                    .subscribeOn(Schedulers.fromExecutor(virtualExecutor)))
             .doOnNext(res -> log.info("Service returned response: {}", res))
             .flatMap(res -> ServerResponse.ok().bodyValue(res));
     }

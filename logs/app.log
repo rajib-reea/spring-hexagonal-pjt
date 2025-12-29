@@ -1,0 +1,221 @@
+2025-12-29 13:36:33.635 INFO  c.c.hexagonal.CityServiceApplication - Starting CityServiceApplication using Java 25.0.1 with PID 21191 (/home/rajib/java-code/hexagonal-pjt/target/classes started by rajib in /home/rajib/java-code/hexagonal-pjt)
+2025-12-29 13:36:33.637 INFO  c.c.hexagonal.CityServiceApplication - No active profile set, falling back to 1 default profile: "default"
+2025-12-29 13:36:33.719 INFO  o.h.validator.internal.util.Version - HV000001: Hibernate Validator 9.0.1.Final
+2025-12-29 13:36:31.394 INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2025-12-29 13:36:31.508 INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 104 ms. Found 1 JPA repository interface.
+2025-12-29 13:36:31.916 INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
+2025-12-29 13:36:32.087 INFO  com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Added connection conn0: url=jdbc:h2:mem:testdb user=SA
+2025-12-29 13:36:32.089 INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Start completed.
+2025-12-29 13:36:32.122 INFO  org.hibernate.orm.jpa - HHH008540: Processing PersistenceUnitInfo [name: default]
+2025-12-29 13:36:32.176 INFO  org.hibernate.orm.core - HHH000001: Hibernate ORM core version 7.2.0.Final
+2025-12-29 13:36:32.512 INFO  o.s.o.j.p.SpringPersistenceUnitInfo - No LoadTimeWeaver setup: ignoring JPA class transformer
+2025-12-29 13:36:32.580 INFO  o.hibernate.orm.connections.pooling - HHH10001005: Database info:
+	Database JDBC URL [jdbc:h2:mem:testdb]
+	Database driver: H2 JDBC Driver
+	Database dialect: H2Dialect
+	Database version: 2.4.240
+	Default catalog/schema: TESTDB/PUBLIC
+	Autocommit mode: undefined/unknown
+	Isolation level: READ_COMMITTED [default READ_COMMITTED]
+	JDBC fetch size: 100
+	Pool: DataSourceConnectionProvider
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2025-12-29 13:36:33.352 INFO  org.hibernate.orm.core - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2025-12-29 13:36:33.385 INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2025-12-29 13:36:33.455 INFO  o.s.d.j.r.q.QueryEnhancerFactories - Hibernate is in classpath; If applicable, HQL parser will be used.
+2025-12-29 13:36:34.043 INFO  o.s.b.reactor.netty.NettyWebServer - Netty started on port 8080 (http)
+2025-12-29 13:36:34.047 INFO  c.c.hexagonal.CityServiceApplication - Started CityServiceApplication in 0.914 seconds (process running for 4.145)
+2025-12-29 13:36:34.050 WARN  o.s.c.events.SpringDocAppInitializer - SpringDoc /v3/api-docs endpoint is enabled by default. To disable it in production, set the property 'springdoc.api-docs.enabled=false'
+2025-12-29 13:36:34.050 WARN  o.s.c.events.SpringDocAppInitializer - SpringDoc /swagger-ui.html endpoint is enabled by default. To disable it in production, set the property 'springdoc.swagger-ui.enabled=false'
+2025-12-29 13:36:40.423 INFO  o.s.api.AbstractOpenApiResource - Init duration for springdoc-openapi is: 189 ms
+2025-12-29 13:36:47.741 INFO  c.c.h.i.rest.handler.CityHandler - Received CreateCityRequest: CreateCityRequest[name=San Francisco, state=California]
+2025-12-29 13:36:47.742 INFO  c.c.h.i.rest.handler.CityHandler - Mapped to CreateCityCommand: CreateCityCommand[name=San Francisco, state=California]
+2025-12-29 13:36:47.923 INFO  c.c.h.i.s.p.o.a.CityRepositoryAdapter - Persisting CityEntity: uid=8298b7b9-7483-46fd-a5b9-ab731c7c76a9, name=San Francisco, state=California, isActive=true
+2025-12-29 13:36:47.952 INFO  c.c.h.i.s.p.o.a.CityRepositoryAdapter - Saved CityEntity with id=1, uid=8298b7b9-7483-46fd-a5b9-ab731c7c76a9, createdAt=2025-12-29T13:36:47.923034186
+2025-12-29 13:36:47.952 INFO  c.c.h.i.s.p.o.a.CityRepositoryAdapter - Mapped saved entity to model: com.csio.hexagonal.domain.model.City@54ebcd98
+2025-12-29 13:36:47.952 INFO  c.c.h.i.rest.handler.CityHandler - Service returned response: CityResponse[uid=8298b7b9-7483-46fd-a5b9-ab731c7c76a9, isActive=true, name=San Francisco, state=California]
+2025-12-29 13:36:51.263 INFO  c.c.h.i.rest.handler.CityHandler - Received CreateCityRequest: CreateCityRequest[name=San Francisco, state=California]
+2025-12-29 13:36:51.264 INFO  c.c.h.i.rest.handler.CityHandler - Mapped to CreateCityCommand: CreateCityCommand[name=San Francisco, state=California]
+2025-12-29 13:36:51.280 ERROR o.s.b.w.a.e.AbstractErrorWebExceptionHandler - [3073ab09-10]  500 Server Error for HTTP POST "/api/v1/city"
+com.csio.hexagonal.domain.exception.DuplicateCityException: City already exists: San Francisco
+	at com.csio.hexagonal.domain.policy.city.CityPolicyEnforcer.ensureUnique(CityPolicyEnforcer.java:18)
+	Suppressed: The stacktrace has been enhanced by Reactor, refer to additional information below: 
+Error has been observed at the following site(s):
+	*__checkpoint ⇢ HTTP POST "/api/v1/city" [ExceptionHandlingWebHandler]
+Original Stack Trace:
+		at com.csio.hexagonal.domain.policy.city.CityPolicyEnforcer.ensureUnique(CityPolicyEnforcer.java:18)
+		at com.csio.hexagonal.application.service.CityService.create(CityService.java:33)
+		at com.csio.hexagonal.application.service.CityService.create(CityService.java:13)
+		at com.csio.hexagonal.infrastructure.rest.handler.CityHandler.lambda$createCity$3(CityHandler.java:103)
+		at reactor.core.publisher.FluxMap$MapSubscriber.onNext(FluxMap.java:106)
+		at reactor.core.publisher.FluxPeek$PeekSubscriber.onNext(FluxPeek.java:203)
+		at reactor.core.publisher.FluxMap$MapSubscriber.onNext(FluxMap.java:122)
+		at reactor.core.publisher.FluxPeek$PeekSubscriber.onNext(FluxPeek.java:203)
+		at reactor.core.publisher.FluxOnErrorResume$ResumeSubscriber.onNext(FluxOnErrorResume.java:80)
+		at reactor.core.publisher.FluxOnErrorResume$ResumeSubscriber.onNext(FluxOnErrorResume.java:80)
+		at reactor.core.publisher.MonoFlatMap$FlatMapMain.onNext(MonoFlatMap.java:159)
+		at reactor.core.publisher.FluxContextWrite$ContextWriteSubscriber.onNext(FluxContextWrite.java:109)
+		at reactor.core.publisher.FluxMapFuseable$MapFuseableConditionalSubscriber.onNext(FluxMapFuseable.java:300)
+		at reactor.core.publisher.FluxFilterFuseable$FilterFuseableConditionalSubscriber.onNext(FluxFilterFuseable.java:338)
+		at reactor.core.publisher.Operators$BaseFluxToMonoOperator.completePossiblyEmpty(Operators.java:2093)
+		at reactor.core.publisher.MonoCollect$CollectSubscriber.onComplete(MonoCollect.java:144)
+		at reactor.core.publisher.FluxMap$MapSubscriber.onComplete(FluxMap.java:144)
+		at reactor.core.publisher.FluxPeek$PeekSubscriber.onComplete(FluxPeek.java:263)
+		at reactor.core.publisher.FluxMap$MapSubscriber.onComplete(FluxMap.java:144)
+		at reactor.netty.channel.FluxReceive.onInboundComplete(FluxReceive.java:419)
+		at reactor.netty.channel.ChannelOperations.onInboundComplete(ChannelOperations.java:465)
+		at reactor.netty.http.server.HttpServerOperations.handleLastHttpContent(HttpServerOperations.java:896)
+		at reactor.netty.http.server.HttpServerOperations.onInboundNext(HttpServerOperations.java:805)
+		at reactor.netty.channel.ChannelOperationsHandler.channelRead(ChannelOperationsHandler.java:115)
+		at io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:356)
+		at reactor.netty.http.server.HttpTrafficHandler.channelRead(HttpTrafficHandler.java:332)
+		at io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:354)
+		at io.netty.channel.CombinedChannelDuplexHandler$DelegatingChannelHandlerContext.fireChannelRead(CombinedChannelDuplexHandler.java:434)
+		at io.netty.handler.codec.ByteToMessageDecoder.fireChannelRead(ByteToMessageDecoder.java:361)
+		at io.netty.handler.codec.ByteToMessageDecoder.channelRead(ByteToMessageDecoder.java:325)
+		at io.netty.channel.CombinedChannelDuplexHandler.channelRead(CombinedChannelDuplexHandler.java:249)
+		at io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:354)
+		at io.netty.channel.DefaultChannelPipeline$HeadContext.channelRead(DefaultChannelPipeline.java:1429)
+		at io.netty.channel.DefaultChannelPipeline.fireChannelRead(DefaultChannelPipeline.java:918)
+		at io.netty.channel.epoll.AbstractEpollStreamChannel$EpollStreamUnsafe.epollInReady(AbstractEpollStreamChannel.java:804)
+		at io.netty.channel.epoll.AbstractEpollChannel$AbstractEpollUnsafe.handle(AbstractEpollChannel.java:482)
+		at io.netty.channel.epoll.EpollIoHandler$DefaultEpollIoRegistration.handle(EpollIoHandler.java:317)
+		at io.netty.channel.epoll.EpollIoHandler.processReady(EpollIoHandler.java:515)
+		at io.netty.channel.epoll.EpollIoHandler.run(EpollIoHandler.java:460)
+		at io.netty.channel.SingleThreadIoEventLoop.runIo(SingleThreadIoEventLoop.java:225)
+		at io.netty.channel.SingleThreadIoEventLoop.run(SingleThreadIoEventLoop.java:196)
+		at io.netty.util.concurrent.SingleThreadEventExecutor$5.run(SingleThreadEventExecutor.java:1195)
+		at io.netty.util.internal.ThreadExecutorMap$2.run(ThreadExecutorMap.java:74)
+		at io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
+		at java.base/java.lang.Thread.run(Thread.java:1474)
+2025-12-29 14:25:32.319 INFO  o.s.b.reactor.netty.GracefulShutdown - Commencing graceful shutdown. Waiting for active requests to complete
+2025-12-29 14:25:32.326 INFO  o.s.b.reactor.netty.GracefulShutdown - Graceful shutdown complete
+2025-12-29 14:25:34.433 INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
+2025-12-29 14:25:34.458 INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown initiated...
+2025-12-29 14:25:34.462 INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown completed.
+2025-12-29 14:25:38.626 INFO  c.c.hexagonal.CityServiceApplication - Starting CityServiceApplication using Java 25.0.1 with PID 23452 (/home/rajib/java-code/hexagonal-pjt/target/classes started by rajib in /home/rajib/java-code/hexagonal-pjt)
+2025-12-29 14:25:38.628 INFO  c.c.hexagonal.CityServiceApplication - No active profile set, falling back to 1 default profile: "default"
+2025-12-29 14:25:38.708 INFO  o.h.validator.internal.util.Version - HV000001: Hibernate Validator 9.0.1.Final
+2025-12-29 14:25:39.273 INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2025-12-29 14:25:39.376 INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 96 ms. Found 1 JPA repository interface.
+2025-12-29 14:25:39.779 INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
+2025-12-29 14:25:39.952 INFO  com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Added connection conn0: url=jdbc:h2:mem:testdb user=SA
+2025-12-29 14:25:39.954 INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Start completed.
+2025-12-29 14:25:39.985 INFO  org.hibernate.orm.jpa - HHH008540: Processing PersistenceUnitInfo [name: default]
+2025-12-29 14:25:40.043 INFO  org.hibernate.orm.core - HHH000001: Hibernate ORM core version 7.2.0.Final
+2025-12-29 14:25:40.378 INFO  o.s.o.j.p.SpringPersistenceUnitInfo - No LoadTimeWeaver setup: ignoring JPA class transformer
+2025-12-29 14:25:40.449 INFO  o.hibernate.orm.connections.pooling - HHH10001005: Database info:
+	Database JDBC URL [jdbc:h2:mem:testdb]
+	Database driver: H2 JDBC Driver
+	Database dialect: H2Dialect
+	Database version: 2.4.240
+	Default catalog/schema: TESTDB/PUBLIC
+	Autocommit mode: undefined/unknown
+	Isolation level: READ_COMMITTED [default READ_COMMITTED]
+	JDBC fetch size: 100
+	Pool: DataSourceConnectionProvider
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2025-12-29 14:25:41.232 INFO  org.hibernate.orm.core - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2025-12-29 14:25:41.266 INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2025-12-29 14:25:41.330 INFO  o.s.d.j.r.q.QueryEnhancerFactories - Hibernate is in classpath; If applicable, HQL parser will be used.
+2025-12-29 14:25:41.947 INFO  o.s.b.reactor.netty.NettyWebServer - Netty started on port 8080 (http)
+2025-12-29 14:25:41.952 INFO  c.c.hexagonal.CityServiceApplication - Started CityServiceApplication in 3.834 seconds (process running for 4.192)
+2025-12-29 14:25:41.955 WARN  o.s.c.events.SpringDocAppInitializer - SpringDoc /v3/api-docs endpoint is enabled by default. To disable it in production, set the property 'springdoc.api-docs.enabled=false'
+2025-12-29 14:25:41.955 WARN  o.s.c.events.SpringDocAppInitializer - SpringDoc /swagger-ui.html endpoint is enabled by default. To disable it in production, set the property 'springdoc.swagger-ui.enabled=false'
+2025-12-29 14:25:53.491 INFO  o.s.api.AbstractOpenApiResource - Init duration for springdoc-openapi is: 162 ms
+2025-12-29 14:25:59.823 INFO  c.c.h.i.rest.handler.CityHandler - Received CreateCityRequest: CreateCityRequest[name=San Francisco, state=California]
+2025-12-29 14:25:59.824 INFO  c.c.h.i.rest.handler.CityHandler - Mapped to CreateCityCommand: CreateCityCommand[name=San Francisco, state=California]
+2025-12-29 14:26:00.027 INFO  c.c.h.i.s.p.o.a.CityRepositoryAdapter - Persisting CityEntity: uid=83b307f3-4b4a-4606-af85-04a76773b500, name=San Francisco, state=California, isActive=true
+2025-12-29 14:26:00.058 INFO  c.c.h.i.s.p.o.a.CityRepositoryAdapter - Saved CityEntity with id=1, uid=83b307f3-4b4a-4606-af85-04a76773b500, createdAt=2025-12-29T14:26:00.027316198
+2025-12-29 14:26:00.058 INFO  c.c.h.i.s.p.o.a.CityRepositoryAdapter - Mapped saved entity to model: com.csio.hexagonal.domain.model.City@6f031fa9
+2025-12-29 14:26:00.059 INFO  c.c.h.i.rest.handler.CityHandler - Service returned response: CityResponse[uid=83b307f3-4b4a-4606-af85-04a76773b500, isActive=true, name=San Francisco, state=California]
+2025-12-29 14:26:04.752 INFO  c.c.h.i.rest.handler.CityHandler - Received CreateCityRequest: CreateCityRequest[name=San Francisco, state=California]
+2025-12-29 14:26:04.752 INFO  c.c.h.i.rest.handler.CityHandler - Mapped to CreateCityCommand: CreateCityCommand[name=San Francisco, state=California]
+2025-12-29 14:26:04.762 ERROR o.s.b.w.a.e.AbstractErrorWebExceptionHandler - [92f9c2c1-11]  500 Server Error for HTTP POST "/api/v1/city"
+com.csio.hexagonal.domain.exception.DuplicateCityException: City already exists: San Francisco
+	at com.csio.hexagonal.domain.policy.city.CityPolicyEnforcer.ensureUnique(CityPolicyEnforcer.java:18)
+	Suppressed: The stacktrace has been enhanced by Reactor, refer to additional information below: 
+Error has been observed at the following site(s):
+	*__checkpoint ⇢ HTTP POST "/api/v1/city" [ExceptionHandlingWebHandler]
+Original Stack Trace:
+		at com.csio.hexagonal.domain.policy.city.CityPolicyEnforcer.ensureUnique(CityPolicyEnforcer.java:18)
+		at com.csio.hexagonal.application.service.CityService.create(CityService.java:33)
+		at com.csio.hexagonal.application.service.CityService.create(CityService.java:13)
+		at com.csio.hexagonal.infrastructure.rest.handler.CityHandler.lambda$createCity$4(CityHandler.java:110)
+		at reactor.core.publisher.MonoCallable.call(MonoCallable.java:69)
+		at reactor.core.publisher.FluxSubscribeOnCallable$CallableSubscribeOnSubscription.run(FluxSubscribeOnCallable.java:230)
+		at reactor.core.scheduler.SchedulerTask.call(SchedulerTask.java:76)
+		at reactor.core.scheduler.SchedulerTask.call(SchedulerTask.java:28)
+		at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:328)
+		at java.base/java.util.concurrent.ThreadPerTaskExecutor$ThreadBoundFuture.run(ThreadPerTaskExecutor.java:323)
+		at java.base/java.lang.VirtualThread.run(VirtualThread.java:456)
+2025-12-29 14:38:29.231 INFO  o.s.b.reactor.netty.GracefulShutdown - Commencing graceful shutdown. Waiting for active requests to complete
+2025-12-29 14:38:29.241 INFO  o.s.b.reactor.netty.GracefulShutdown - Graceful shutdown complete
+2025-12-29 14:38:31.348 INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
+2025-12-29 14:38:31.366 INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown initiated...
+2025-12-29 14:38:31.370 INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown completed.
+2025-12-29 14:38:40.002 INFO  c.c.hexagonal.CityServiceApplication - Starting CityServiceApplication using Java 25.0.1 with PID 25061 (/home/rajib/java-code/hexagonal-pjt/target/classes started by rajib in /home/rajib/java-code/hexagonal-pjt)
+2025-12-29 14:38:40.004 INFO  c.c.hexagonal.CityServiceApplication - No active profile set, falling back to 1 default profile: "default"
+2025-12-29 14:38:40.085 INFO  o.h.validator.internal.util.Version - HV000001: Hibernate Validator 9.0.1.Final
+2025-12-29 14:38:40.704 INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2025-12-29 14:38:40.819 INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 108 ms. Found 1 JPA repository interface.
+2025-12-29 14:38:41.263 INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
+2025-12-29 14:38:41.450 INFO  com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Added connection conn0: url=jdbc:h2:mem:testdb user=SA
+2025-12-29 14:38:41.451 INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Start completed.
+2025-12-29 14:38:41.485 INFO  org.hibernate.orm.jpa - HHH008540: Processing PersistenceUnitInfo [name: default]
+2025-12-29 14:38:41.560 INFO  org.hibernate.orm.core - HHH000001: Hibernate ORM core version 7.2.0.Final
+2025-12-29 14:38:41.929 INFO  o.s.o.j.p.SpringPersistenceUnitInfo - No LoadTimeWeaver setup: ignoring JPA class transformer
+2025-12-29 14:38:42.007 INFO  o.hibernate.orm.connections.pooling - HHH10001005: Database info:
+	Database JDBC URL [jdbc:h2:mem:testdb]
+	Database driver: H2 JDBC Driver
+	Database dialect: H2Dialect
+	Database version: 2.4.240
+	Default catalog/schema: TESTDB/PUBLIC
+	Autocommit mode: undefined/unknown
+	Isolation level: READ_COMMITTED [default READ_COMMITTED]
+	JDBC fetch size: 100
+	Pool: DataSourceConnectionProvider
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2025-12-29 14:38:42.753 INFO  org.hibernate.orm.core - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2025-12-29 14:38:42.785 INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2025-12-29 14:38:42.854 INFO  o.s.d.j.r.q.QueryEnhancerFactories - Hibernate is in classpath; If applicable, HQL parser will be used.
+2025-12-29 14:38:43.499 INFO  o.s.b.reactor.netty.NettyWebServer - Netty started on port 8080 (http)
+2025-12-29 14:38:43.503 INFO  c.c.hexagonal.CityServiceApplication - Started CityServiceApplication in 4.032 seconds (process running for 4.347)
+2025-12-29 14:38:43.506 WARN  o.s.c.events.SpringDocAppInitializer - SpringDoc /v3/api-docs endpoint is enabled by default. To disable it in production, set the property 'springdoc.api-docs.enabled=false'
+2025-12-29 14:38:43.506 WARN  o.s.c.events.SpringDocAppInitializer - SpringDoc /swagger-ui.html endpoint is enabled by default. To disable it in production, set the property 'springdoc.swagger-ui.enabled=false'
+2025-12-29 14:38:49.970 INFO  o.s.api.AbstractOpenApiResource - Init duration for springdoc-openapi is: 189 ms
+2025-12-29 14:38:57.467 INFO  c.c.h.i.rest.handler.CityHandler - Received CreateCityRequest: CreateCityRequest[name=San Francisco, state=California]
+2025-12-29 14:38:57.468 INFO  c.c.h.i.rest.handler.CityHandler - Mapped to CreateCityCommand: CreateCityCommand[name=San Francisco, state=California]
+2025-12-29 14:38:57.651 INFO  c.c.h.i.s.p.o.a.CityRepositoryAdapter - Persisting CityEntity: uid=62d5d9f8-4ac3-4a87-8fe8-98db338c40a3, name=San Francisco, state=California, isActive=true
+2025-12-29 14:38:57.680 INFO  c.c.h.i.s.p.o.a.CityRepositoryAdapter - Saved CityEntity with id=1, uid=62d5d9f8-4ac3-4a87-8fe8-98db338c40a3, createdAt=2025-12-29T14:38:57.651673130
+2025-12-29 14:38:57.681 INFO  c.c.h.i.s.p.o.a.CityRepositoryAdapter - Mapped saved entity to model: com.csio.hexagonal.domain.model.City@4ade9eba
+2025-12-29 14:38:57.681 INFO  c.c.h.i.rest.handler.CityHandler - Service returned response: CityResponse[uid=62d5d9f8-4ac3-4a87-8fe8-98db338c40a3, isActive=true, name=San Francisco, state=California]
+2025-12-29 14:39:01.394 INFO  c.c.h.i.rest.handler.CityHandler - Received CreateCityRequest: CreateCityRequest[name=San Francisco, state=California]
+2025-12-29 14:39:01.394 INFO  c.c.h.i.rest.handler.CityHandler - Mapped to CreateCityCommand: CreateCityCommand[name=San Francisco, state=California]
+2025-12-29 14:39:01.406 ERROR o.s.b.w.a.e.AbstractErrorWebExceptionHandler - [22fe2b57-10]  500 Server Error for HTTP POST "/api/v1/city"
+java.util.concurrent.CompletionException: com.csio.hexagonal.domain.exception.DuplicateCityException: City already exists: San Francisco
+	at java.base/java.util.concurrent.CompletableFuture.wrapInCompletionException(CompletableFuture.java:323)
+	Suppressed: The stacktrace has been enhanced by Reactor, refer to additional information below: 
+Error has been observed at the following site(s):
+	*__checkpoint ⇢ HTTP POST "/api/v1/city" [ExceptionHandlingWebHandler]
+Original Stack Trace:
+		at java.base/java.util.concurrent.CompletableFuture.wrapInCompletionException(CompletableFuture.java:323)
+		at java.base/java.util.concurrent.CompletableFuture.encodeThrowable(CompletableFuture.java:359)
+		at java.base/java.util.concurrent.CompletableFuture.completeThrowable(CompletableFuture.java:364)
+		at java.base/java.util.concurrent.CompletableFuture$AsyncRun.run(CompletableFuture.java:1828)
+		at java.base/java.util.concurrent.ThreadPerTaskExecutor$TaskRunner.run(ThreadPerTaskExecutor.java:291)
+		at java.base/java.lang.VirtualThread.run(VirtualThread.java:456)
+Caused by: com.csio.hexagonal.domain.exception.DuplicateCityException: City already exists: San Francisco
+	at com.csio.hexagonal.domain.policy.city.CityPolicyEnforcer.ensureUnique(CityPolicyEnforcer.java:18)
+	at com.csio.hexagonal.application.service.CityService.lambda$create$0(CityService.java:40)
+	at java.base/java.util.concurrent.CompletableFuture$AsyncRun.run(CompletableFuture.java:1825)
+	at java.base/java.util.concurrent.ThreadPerTaskExecutor$TaskRunner.run(ThreadPerTaskExecutor.java:291)
+	at java.base/java.lang.VirtualThread.run(VirtualThread.java:456)
+2025-12-29 14:39:09.320 INFO  o.s.b.reactor.netty.GracefulShutdown - Commencing graceful shutdown. Waiting for active requests to complete
+2025-12-29 14:39:09.322 INFO  o.s.b.reactor.netty.GracefulShutdown - Graceful shutdown complete
+2025-12-29 14:39:08.653 INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
+2025-12-29 14:39:08.656 INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown initiated...
+2025-12-29 14:39:08.658 INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown completed.

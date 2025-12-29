@@ -10,15 +10,20 @@ import com.csio.hexagonal.domain.vo.State;
 import com.csio.hexagonal.infrastructure.rest.response.city.CityResponse;
 import org.springframework.stereotype.Service;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+
 @Service
 public class CityService implements CommandUseCase<CreateCityCommand, CityResponse> {
 
     private final CityOutPort cityOutPort;
     private final CityPolicy cityPolicy;
+    private final Executor cpuExecutor;
 
-    public CityService(CityOutPort cityOutPort, CityPolicy cityPolicy) {
+    public CityService(CityOutPort cityOutPort, CityPolicy cityPolicy, Executor cpuExecutor) {
         this.cityOutPort = cityOutPort;
         this.cityPolicy = cityPolicy;
+        this.cpuExecutor = cpuExecutor;
     }
 
     @Override
@@ -30,7 +35,9 @@ public class CityService implements CommandUseCase<CreateCityCommand, CityRespon
                 new State(command.state())
         );
 
-        cityPolicy.ensureUnique(city, cityOutPort.findAll());
+        var existing = cityOutPort.findAll();
+        // Run policy checks on the cpuExecutor to avoid using virtual threads for CPU work
+        CompletableFuture.runAsync(() -> cityPolicy.ensureUnique(city, existing), cpuExecutor).join();
 
         City savedCity = cityOutPort.save(city);
 

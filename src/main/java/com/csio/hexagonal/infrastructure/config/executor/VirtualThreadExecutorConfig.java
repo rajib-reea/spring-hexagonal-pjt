@@ -3,7 +3,7 @@ package com.csio.hexagonal.infrastructure.config.executor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.task.TaskExecutor;
+import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
 @Configuration
@@ -14,9 +14,10 @@ import java.util.concurrent.Executors;
 )
 public class VirtualThreadExecutorConfig {
 
+    // Expose an Executor backed by virtual threads. Use this with Reactor's
+    // `Schedulers.fromExecutor(virtualExecutor)` to offload blocking calls.
     @Bean("virtualExecutor")
-    public TaskExecutor virtualExecutor() {
-        var executor = Executors.newVirtualThreadPerTaskExecutor();
-        return executor::execute;
+    public Executor virtualExecutor() {
+        return Executors.newVirtualThreadPerTaskExecutor();
     }
 }

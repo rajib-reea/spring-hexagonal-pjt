@@ -2,24 +2,28 @@ package com.csio.hexagonal.infrastructure.store.persistence.entity;
 
 import com.csio.hexagonal.infrastructure.store.persistence.entity.contract.Activatable;
 import jakarta.persistence.*;
-import lombok.Builder;
 import lombok.Data;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
 @MappedSuperclass
 @Data
+@EntityListeners(AuditingEntityListener.class)
 public abstract class AuditableEntity implements Serializable, Activatable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "uid", nullable = false, unique = true)
+    @Column(name = "uid", nullable = false, unique = true, updatable = false)
     private String uid;
 
     @Column(name = "is_active", nullable = false)
-    private Boolean isActive;
+    private Boolean isActive = true;
 
     @Column(name = "created_by")
     private Long createdBy;
@@ -30,9 +34,11 @@ public abstract class AuditableEntity implements Serializable, Activatable {
     @Column(name = "removed_by")
     private Long removedBy;
 
-    @Column(name = "created_at", nullable = false)
+    @CreatedDate
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    @LastModifiedDate
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
@@ -73,70 +79,3 @@ public abstract class AuditableEntity implements Serializable, Activatable {
     
     public Long getId() { return this.id; }
 }
-// package com.csio.hexagonal.infrastructure.store.persistence.entity;
-
-// import com.csio.hexagonal.infrastructure.store.persistence.entity.contract.Activatable;
-// import jakarta.persistence.*;
-// import lombok.Data;
-// import org.springframework.data.annotation.CreatedDate;
-// import org.springframework.data.annotation.LastModifiedDate;
-// import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
-// import java.io.Serializable;
-// import java.time.LocalDateTime;
-
-// @MappedSuperclass
-// @Data
-// @EntityListeners(AuditingEntityListener.class)
-// public abstract class AuditableEntity implements Serializable, Activatable {
-
-//     @Id
-//     @GeneratedValue(strategy = GenerationType.IDENTITY)
-//     private Long id;
-
-//     @Column(name = "uid", nullable = false, unique = true, updatable = false)
-//     private String uid;
-
-//     @Column(name = "is_active", nullable = false)
-//     private Boolean isActive = true;
-
-//     @CreatedDate
-//     @Column(name = "created_at", nullable = false, updatable = false)
-//     private LocalDateTime createdAt;
-
-//     @LastModifiedDate
-//     @Column(name = "updated_at")
-//     private LocalDateTime updatedAt;
-
-//     @Column(name = "removed_at")
-//     private LocalDateTime removedAt;
-
-//     @Column(name = "created_by")
-//     private Long createdBy;
-
-//     @Column(name = "updated_by")
-//     private Long updatedBy;
-
-//     @Column(name = "removed_by")
-//     private Long removedBy;
-
-//     @Override
-//     public void setIsActive(boolean active) {
-//         this.isActive = active;
-//     }
-
-//     @Override
-//     public void setCreatedAt(LocalDateTime createdAt) {
-//         this.createdAt = createdAt;
-//     }
-
-//     @Override
-//     public void setUpdatedAt(LocalDateTime updatedAt) {
-//         this.updatedAt = updatedAt;
-//     }
-
-//     @Override
-//     public void setRemovedAt(LocalDateTime removedAt) {
-//         this.removedAt = removedAt;
-//     }
-// }

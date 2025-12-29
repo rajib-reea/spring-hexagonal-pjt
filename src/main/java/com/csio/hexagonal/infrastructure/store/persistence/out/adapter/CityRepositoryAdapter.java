@@ -2,7 +2,7 @@ package com.csio.hexagonal.infrastructure.store.persistence.out.adapter;
 
 
 import com.csio.hexagonal.infrastructure.store.persistence.mapper.CityMapper;
-import com.csio.hexagonal.application.port.out.CityOutPort;
+import com.csio.hexagonal.application.port.out.CityPersistencePort;
 import com.csio.hexagonal.domain.model.City;
 import com.csio.hexagonal.domain.vo.CityId;
 import com.csio.hexagonal.domain.vo.State;
@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 
 @Repository
-public class CityRepositoryAdapter implements CityOutPort {
+public class CityRepositoryAdapter implements CityPersistencePort {
 
     private final CityRepository repo;
     private static final Logger log = LoggerFactory.getLogger(CityRepositoryAdapter.class);

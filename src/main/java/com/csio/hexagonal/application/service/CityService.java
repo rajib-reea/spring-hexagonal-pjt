@@ -1,7 +1,7 @@
 package com.csio.hexagonal.application.service;
 
 import com.csio.hexagonal.application.port.in.CommandUseCase;
-import com.csio.hexagonal.application.port.out.CityOutPort;
+import com.csio.hexagonal.application.port.out.CityPersistencePort;
 import com.csio.hexagonal.application.usecase.CreateCityCommand;
 import com.csio.hexagonal.domain.model.City;
 import com.csio.hexagonal.domain.policy.city.CityPolicy;
@@ -18,13 +18,13 @@ import java.util.concurrent.Executor;
 @Service
 public class CityService implements CommandUseCase<CreateCityCommand, CityResponse> {
 
-    private final CityOutPort cityOutPort;
+        private final CityPersistencePort cityOutPort;
     private final CityPolicy cityPolicy;
     private final Executor cpuExecutor;
     private final Executor virtualExecutor;
 
-    public CityService(CityOutPort cityOutPort, CityPolicy cityPolicy, Executor cpuExecutor, Executor virtualExecutor) {
-        this.cityOutPort = cityOutPort;
+        public CityService(CityPersistencePort cityOutPort, CityPolicy cityPolicy, Executor cpuExecutor, Executor virtualExecutor) {
+                this.cityOutPort = cityOutPort;
         this.cityPolicy = cityPolicy;
         this.cpuExecutor = cpuExecutor;
         this.virtualExecutor = virtualExecutor;

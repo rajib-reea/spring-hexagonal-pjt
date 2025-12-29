@@ -1,11 +1,10 @@
-
 package com.csio.hexagonal.domain.policy.city;
 
 import com.csio.hexagonal.domain.exception.DuplicateCityException;
 import com.csio.hexagonal.domain.model.City;
-import com.csio.hexagonal.domain.policy.city.CityPolicy;
-import java.util.List;
 import org.springframework.stereotype.Component;
+
+import java.util.List;
 
 @Component
 public class CityPolicyEnforcer implements CityPolicy {
@@ -13,9 +12,10 @@ public class CityPolicyEnforcer implements CityPolicy {
     @Override
     public void ensureUnique(City city, List<City> existingCities) {
         boolean exists = existingCities.stream()
-                .anyMatch(c -> c.name().equalsIgnoreCase(city.name()));
+                .anyMatch(c -> c.getName().equalsIgnoreCase(city.getName()));
+
         if (exists) {
-            throw new DuplicateCityException(city.name());
+            throw new DuplicateCityException(city.getName());
         }
     }
 }

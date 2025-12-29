@@ -1,73 +1,59 @@
-
-// package com.csio.hexagonal.domain.model;
-
-// import com.csio.hexagonal.domain.specification.CityNameNotEmptySpec;
-// import com.csio.hexagonal.domain.vo.CityId;
-// import com.csio.hexagonal.domain.vo.State;
-
-// public class City {
-
-//     private final CityId id;
-//     private final String name;
-//     private final State state;
-
-//     public City(CityId id, String name, State state) {
-//         new CityNameNotEmptySpec().check(name);
-//         this.id = id;
-//         this.name = name;
-//         this.state = state;
-//     }
-
-//     public CityId id() { return id; }
-//     public String name() { return name; }
-//     public State state() { return state; }
-// }
 package com.csio.hexagonal.domain.model;
 
-import com.csio.hexagonal.domain.specification.CityNameNotEmptySpec;
 import com.csio.hexagonal.domain.vo.CityId;
 import com.csio.hexagonal.domain.vo.State;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
+@ToString
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class City {
 
+    //Entities are defined by identity, not by their attributes
+    @EqualsAndHashCode.Include
     private final CityId id;
+
     private final String name;
     private final State state;
     private boolean active;
 
     public City(CityId id, String name, State state) {
-        new CityNameNotEmptySpec().check(name);
+        if (name == null || name.isBlank()) {
+            throw new IllegalArgumentException("City name must not be empty");
+        }
+        if (state == null) {
+            throw new IllegalArgumentException("State must not be null");
+        }
+
         this.id = id;
         this.name = name;
         this.state = state;
-        this.active = true; // default business rule
+        this.active = true;
     }
 
-    /* ===== Domain behaviors ===== */
-
-    public void deactivate() {
-        this.active = false;
-    }
+    /* ===== Domain behavior ===== */
 
     public void activate() {
         this.active = true;
     }
 
-    /* ===== Getters (intent-revealing) ===== */
-
-    public CityId id() {
-        return id;
+    public void deactivate() {
+        this.active = false;
     }
 
-    public String name() {
-        return name;
+    public CityId getId() {
+        return this.id;
     }
 
-    public State state() {
-        return state;
+    public String getName() {
+        return this.name;
+    }
+
+    public State getState() {
+        return this.state;
     }
 
     public boolean isActive() {
-        return active;
+        return this.active;
     }
 }

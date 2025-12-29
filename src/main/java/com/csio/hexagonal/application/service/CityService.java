@@ -39,7 +39,7 @@ public class CityService implements CommandUseCase<CreateCityCommand, CityRespon
         // Run policy checks on the cpuExecutor to avoid using virtual threads for CPU work
         CompletableFuture.runAsync(() -> cityPolicy.ensureUnique(city, existing), cpuExecutor).join();
 
-        City savedCity = cityOutPort.save(city);
+        City savedCity = cityOutPort.save(city, token);
 
         return new CityResponse(
                 savedCity.getId().value().toString(), // UUID → String

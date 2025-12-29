@@ -13,6 +13,7 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 @Repository
 public class CityRepositoryAdapter implements CityOutPort {
@@ -25,13 +26,14 @@ public class CityRepositoryAdapter implements CityOutPort {
     }
 
     @Override
-    public City save(City city) {
+    public City save(City city, String token) {
         CityEntity entity = CityMapper.toEntity(city);
         // Fallback: ensure createdAt is populated if JPA auditing didn't run
         if (entity.getCreatedAt() == null) {
-            entity.setCreatedAt(LocalDateTime.now());
+            entity.setCreatedAt(java.time.LocalDateTime.now());
             log.debug("createdAt was null — set to now: {}", entity.getCreatedAt());
         }
+
         log.info("Persisting CityEntity: uid={}, name={}, state={}, isActive={}",
                 entity.getUid(), entity.getName(), entity.getState(), entity.getIsActive());
 
@@ -50,5 +52,23 @@ public class CityRepositoryAdapter implements CityOutPort {
                    .stream()
                    .map(CityMapper::toModel)
                    .toList();
+    }
+
+    @Override
+    public Optional<City> findByUid(String uid, String token) {
+        return repo.findById(uid).map(CityMapper::toModel);
+    }
+
+    @Override
+    public City update(String uid, City entity, String token) {
+        // naive implementation: map to entity and save
+        CityEntity e = CityMapper.toEntity(entity);
+        CityEntity saved = repo.save(e);
+        return CityMapper.toModel(saved);
+    }
+
+    @Override
+    public void deleteByUid(String uid, String token) {
+        repo.deleteById(uid);
     }
 }

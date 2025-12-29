@@ -5,9 +5,9 @@ import com.csio.hexagonal.domain.vo.CityId;
 import com.csio.hexagonal.domain.vo.State;
 import com.csio.hexagonal.infrastructure.store.persistence.entity.CityEntity;
 
-public final class CityPersistenceMapper {
+public final class CityMapper {
 
-    private CityPersistenceMapper() {}
+    private CityMapper() {}
 
     public static CityEntity toEntity(City city) {
         CityEntity entity = new CityEntity();
@@ -20,7 +20,7 @@ public final class CityPersistenceMapper {
         return entity;
     }
 
-    public static City toDomain(CityEntity entity) {
+    public static City toModel(CityEntity entity) {
         City city = new City(
                 CityId.from(entity.getUid()),
                 entity.getName(),

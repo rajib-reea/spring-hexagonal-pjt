@@ -29,6 +29,6 @@
 /home/rajib/java-code/hexagonal-pjt/src/main/java/com/csio/hexagonal/infrastructure/store/persistence/entity/AuditableEntity.java
 /home/rajib/java-code/hexagonal-pjt/src/main/java/com/csio/hexagonal/infrastructure/store/persistence/entity/CityEntity.java
 /home/rajib/java-code/hexagonal-pjt/src/main/java/com/csio/hexagonal/infrastructure/store/persistence/entity/contract/Activatable.java
-/home/rajib/java-code/hexagonal-pjt/src/main/java/com/csio/hexagonal/infrastructure/store/persistence/mapper/CityPersistenceMapper.java
+/home/rajib/java-code/hexagonal-pjt/src/main/java/com/csio/hexagonal/infrastructure/store/persistence/mapper/CityMapper.java
 /home/rajib/java-code/hexagonal-pjt/src/main/java/com/csio/hexagonal/infrastructure/store/persistence/out/adapter/CityRepositoryAdapter.java
 /home/rajib/java-code/hexagonal-pjt/src/main/java/com/csio/hexagonal/infrastructure/store/persistence/repo/CityRepository.java

@@ -102,3 +102,26 @@ java -jar target/*.jar
 - API examples are defined in `CitySpec` and exposed with springdoc (Swagger UI).
 
 Feel free to edit this README; let me know if you want the tree in a different format.
+
+## External API Integration (third-party APIs)
+
+Recommended steps to add a third‑party API (e.g. Meta API, Google API):
+
+- **Define a port (outbound interface):** create an interface under `application.port.out` (for example `MetaApiPort`) that expresses the operations your application needs.
+- **Implement an adapter/client in infrastructure:** add a reactive client under `infrastructure.integration` or `infrastructure.adapter` (for example `MetaApiClient`), implementing the port. Prefer `WebClient` and return `Mono`/`Flux` for WebFlux projects.
+- **Configuration & beans:** put base URLs, timeouts and credentials in `application.properties` and bind them with a `@ConfigurationProperties` class under `infrastructure.config`. Provide a `WebClient` bean if needed.
+- **Non‑blocking by default:** use `WebClient` (reactive) so calls stay non‑blocking. If you must use a blocking client, offload calls to the `virtualExecutor` with `Mono.fromCallable(...).subscribeOn(Schedulers.fromExecutor(virtualExecutor))`.
+- **CPU vs blocking separation:** keep blocking I/O on `virtualExecutor` and CPU‑heavy work on `cpuExecutor` (the existing `cpuExecutor` bean in `PlatformTaskExecutorConfig`).
+- **Resilience & observability:** add timeouts, retries and circuit breakers (Resilience4j) at the adapter level; instrument calls with logs/metrics.
+- **Domain mapping:** adapter maps third‑party DTOs to domain models or application commands; services depend only on the `MetaApiPort` abstraction.
+- **Testing:** unit‑test services by mocking the port; integration tests can use `WireMock` or a test `WebClient` server.
+
+Example minimal structure:
+
+```text
+application/port/out/MetaApiPort.java      # port (interface)
+infrastructure/integration/meta/MetaApiClient.java   # WebClient-based adapter implements port
+infrastructure/config/MetaApiConfig.java   # WebClient bean + properties binding
+```
+
+Add these steps where appropriate in your workflow and inject the port into services rather than the concrete client.

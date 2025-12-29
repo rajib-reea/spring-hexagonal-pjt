@@ -39,12 +39,12 @@ public class CityService implements CommandUseCase<CreateCityCommand, CityRespon
                 new State(command.state())
         );
 
-        List<City> existing = cityOutPort.findAll();
-
-        return Mono.fromRunnable(() -> cityPolicy.ensureUnique(city, existing))
-                .subscribeOn(Schedulers.fromExecutor(cpuExecutor))
-                .then(Mono.fromCallable(() -> cityOutPort.save(city, token))
-                        .subscribeOn(Schedulers.fromExecutor(virtualExecutor)))
+        return Mono.fromCallable(() -> cityOutPort.findAll())
+                .subscribeOn(Schedulers.fromExecutor(virtualExecutor))
+                .flatMap(existing -> Mono.fromRunnable(() -> cityPolicy.ensureUnique(city, existing))
+                        .subscribeOn(Schedulers.fromExecutor(cpuExecutor))
+                        .then(Mono.fromCallable(() -> cityOutPort.save(city, token))
+                                .subscribeOn(Schedulers.fromExecutor(virtualExecutor))))
                 .map(savedCity -> new CityResponse(
                         savedCity.getId().value().toString(),
                         savedCity.isActive(),

@@ -103,6 +103,19 @@ java -jar target/*.jar
 
 Feel free to edit this README; let me know if you want the tree in a different format.
 
+**Call Flow (Swagger request → DB save)**
+
+- **Client → Swagger UI / HTTP POST:** send POST /api/v1/city with example body (see [src/main/java/com/csio/hexagonal/infrastructure/rest/spec/CitySpec.java](src/main/java/com/csio/hexagonal/infrastructure/rest/spec/CitySpec.java)).
+- **Router:** request routed by [src/main/java/com/csio/hexagonal/infrastructure/config/router/operation/city/CityRouter.java](src/main/java/com/csio/hexagonal/infrastructure/config/router/operation/city/CityRouter.java) to the handler.
+- **Handler:** [src/main/java/com/csio/hexagonal/infrastructure/rest/handler/CityHandler.java](src/main/java/com/csio/hexagonal/infrastructure/rest/handler/CityHandler.java) reads `CreateCityRequest`, maps to `CreateCityCommand`, logs, and calls `commandUseCase.create(...)` (reactive `Mono`) — the handler subscribes the flow on the `virtualExecutor` to avoid blocking the event loop.
+- **Application / Use Case:** [src/main/java/com/csio/hexagonal/application/service/CityService.java](src/main/java/com/csio/hexagonal/application/service/CityService.java) implements the create use case and returns `Mono<CityResponse>`; it explicitly offloads blocking work: `findAll()` is run on `virtualExecutor`, CPU-bound `cityPolicy.ensureUnique(...)` runs on `cpuExecutor`, and persistence is performed on `virtualExecutor`.
+- **Port / Adapter:** the service calls the persistence port interface [src/main/java/com/csio/hexagonal/application/port/out/CityPersistencePort.java](src/main/java/com/csio/hexagonal/application/port/out/CityPersistencePort.java) which is implemented by [src/main/java/com/csio/hexagonal/infrastructure/store/persistence/out/adapter/CityRepositoryAdapter.java](src/main/java/com/csio/hexagonal/infrastructure/store/persistence/out/adapter/CityRepositoryAdapter.java). The adapter maps domain model ↔ entity and calls the blocking `CityRepository`.
+- **Repository → Database:** [src/main/java/com/csio/hexagonal/infrastructure/store/persistence/repo/CityRepository.java](src/main/java/com/csio/hexagonal/infrastructure/store/persistence/repo/CityRepository.java) is a Spring Data JPA `JpaRepository` that performs blocking JDBC operations to persist the entity into the DB. JPA auditing populates timestamps (see [src/main/java/com/csio/hexagonal/infrastructure/store/persistence/entity/AuditableEntity.java](src/main/java/com/csio/hexagonal/infrastructure/store/persistence/entity/AuditableEntity.java)).
+- **Observability:** important artifacts: logs written to `logs/app.log` (configured in [src/main/resources/logback-spring.xml](src/main/resources/logback-spring.xml)) and OpenAPI examples in `CitySpec` used by Swagger UI.
+
+Keep blocking adapters scheduled on `virtualExecutor` so the Netty event loop remains non-blocking. If you want, I can add a short sequence diagram or Mermaid block next.
+
+
 ## External API Integration (third-party APIs)
 
 Recommended steps to add a third‑party API (e.g. Meta API, Google API):

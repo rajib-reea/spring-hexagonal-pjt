@@ -9,8 +9,8 @@ import com.csio.hexagonal.domain.vo.State;
 import com.csio.hexagonal.infrastructure.store.persistence.entity.CityEntity;
 import com.csio.hexagonal.infrastructure.store.persistence.repo.CityRepository;
 import org.springframework.stereotype.Repository;
-
 import java.util.List;
+
 @Repository
 public class CityRepositoryAdapter implements CityOutPort {
 

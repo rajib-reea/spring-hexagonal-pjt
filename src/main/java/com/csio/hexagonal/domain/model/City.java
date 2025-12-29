@@ -3,10 +3,8 @@ package com.csio.hexagonal.domain.model;
 import com.csio.hexagonal.domain.vo.CityId;
 import com.csio.hexagonal.domain.vo.State;
 import lombok.EqualsAndHashCode;
-import lombok.Getter;
 import lombok.ToString;
 
-@Getter
 @ToString
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class City {
@@ -41,5 +39,21 @@ public class City {
 
     public void deactivate() {
         this.active = false;
+    }
+
+    public CityId getId() {
+        return this.id;
+    }
+
+    public String getName() {
+        return this.name;
+    }
+
+    public State getState() {
+        return this.state;
+    }
+
+    public boolean isActive() {
+        return this.active;
     }
 }

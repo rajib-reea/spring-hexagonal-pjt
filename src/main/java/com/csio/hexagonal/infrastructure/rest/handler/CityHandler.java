@@ -56,12 +56,16 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import org.springframework.stereotype.Component;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
 
 @Component
 public class CityHandler {
+
+    private static final Logger log = LoggerFactory.getLogger(CityHandler.class);
 
     private final CommandUseCase<CreateCityCommand, CityResponse> commandUseCase;
 
@@ -93,8 +97,11 @@ public class CityHandler {
         String token = request.headers().firstHeader("Authorization");
 
         return request.bodyToMono(CreateCityRequest.class)
+            .doOnNext(req -> log.info("Received CreateCityRequest: {}", req))
             .map(req -> new CreateCityCommand(req.name(), req.state()))
+            .doOnNext(cmd -> log.info("Mapped to CreateCityCommand: {}", cmd))
             .map(cmd -> commandUseCase.create(cmd, token))
+            .doOnNext(res -> log.info("Service returned response: {}", res))
             .flatMap(res -> ServerResponse.ok().bodyValue(res));
     }
 }

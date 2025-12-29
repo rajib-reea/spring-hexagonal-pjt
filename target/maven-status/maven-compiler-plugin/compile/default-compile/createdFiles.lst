@@ -1,0 +1,8 @@
+com/csio/hexagonal/application/port/in/CommandUseCase.class
+com/csio/hexagonal/domain/vo/State.class
+com/csio/hexagonal/application/port/in/QueryUseCase.class
+com/csio/hexagonal/CityServiceApplication.class
+com/csio/hexagonal/application/port/out/ServiceContract.class
+com/csio/hexagonal/application/port/out/CityOutPort.class
+com/csio/hexagonal/domain/vo/CityId.class
+com/csio/hexagonal/domain/model/City.class

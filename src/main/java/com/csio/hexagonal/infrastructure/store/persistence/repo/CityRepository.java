@@ -1,4 +1,3 @@
-
 package com.csio.hexagonal.infrastructure.store.persistence.repo;
 
 import com.csio.hexagonal.infrastructure.store.persistence.entity.CityEntity;

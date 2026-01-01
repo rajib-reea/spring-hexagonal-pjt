@@ -5,6 +5,8 @@ import com.csio.hexagonal.domain.vo.CityId;
 import com.csio.hexagonal.domain.vo.State;
 import com.csio.hexagonal.infrastructure.store.persistence.entity.CityEntity;
 
+import java.util.UUID;
+
 public final class CityMapper {
 
     private CityMapper() {}
@@ -12,7 +14,7 @@ public final class CityMapper {
     public static CityEntity toEntity(City city) {
         CityEntity entity = new CityEntity();
 
-        entity.setUid(city.getId().value().toString());
+        entity.setUid(String.valueOf(UUID.fromString(city.getId().value().toString())));
         entity.setName(city.getName());
         entity.setState(city.getState().value());
         entity.setIsActive(city.isActive());

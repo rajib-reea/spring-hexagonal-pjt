@@ -4,16 +4,15 @@ package com.csio.hexagonal.infrastructure.store.persistence.out.adapter;
 import com.csio.hexagonal.infrastructure.store.persistence.mapper.CityMapper;
 import com.csio.hexagonal.application.port.out.CityPersistencePort;
 import com.csio.hexagonal.domain.model.City;
-import com.csio.hexagonal.domain.vo.CityId;
-import com.csio.hexagonal.domain.vo.State;
 import com.csio.hexagonal.infrastructure.store.persistence.entity.CityEntity;
 import com.csio.hexagonal.infrastructure.store.persistence.repo.CityRepository;
 import org.springframework.stereotype.Repository;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import java.time.LocalDateTime;
+
 import java.util.Optional;
+import java.util.UUID;
 
 @Repository
 public class CityRepositoryAdapter implements CityPersistencePort {
@@ -55,8 +54,9 @@ public class CityRepositoryAdapter implements CityPersistencePort {
     }
 
     @Override
-    public Optional<City> findByUid(String uid, String token) {
-        return repo.findById(uid).map(CityMapper::toModel);
+    public Optional<City> findByUid(UUID uid, String token) {
+        log.info("Received UUID for uid={}", uid);
+        return repo.findByUid(String.valueOf(uid)).map(CityMapper::toModel);
     }
 
     @Override

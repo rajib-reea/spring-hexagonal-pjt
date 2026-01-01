@@ -1,6 +1,7 @@
 package com.csio.hexagonal.application.service;
 
 import com.csio.hexagonal.application.port.in.CommandUseCase;
+import com.csio.hexagonal.application.port.in.QueryUseCase;
 import com.csio.hexagonal.application.port.out.CityPersistencePort;
 import com.csio.hexagonal.application.usecase.CreateCityCommand;
 import com.csio.hexagonal.domain.model.City;
@@ -13,10 +14,11 @@ import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.Executor;
 
 @Service
-public class CityService implements CommandUseCase<CreateCityCommand, CityResponse> {
+public class CityService implements CommandUseCase<CreateCityCommand, CityResponse>, QueryUseCase<CityResponse> {
 
         private final CityPersistencePort cityOutPort;
     private final CityPolicy cityPolicy;
@@ -50,6 +52,17 @@ public class CityService implements CommandUseCase<CreateCityCommand, CityRespon
                         savedCity.isActive(),
                         savedCity.getName(),
                         savedCity.getState().value()
+                ));
+    }
+
+    @Override
+    public Optional<CityResponse> getByUid(String uid, String token) {
+        return cityOutPort.findByUid(uid, token)
+                .map(city -> new CityResponse(
+                        city.getId().value().toString(),
+                        city.isActive(),
+                        city.getName(),
+                        city.getState().value()
                 ));
     }
 }

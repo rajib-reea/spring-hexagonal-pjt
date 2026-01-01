@@ -1,6 +1,7 @@
 package com.csio.hexagonal.infrastructure.rest.handler;
 
 import com.csio.hexagonal.application.port.in.CommandUseCase;
+import com.csio.hexagonal.application.port.in.QueryUseCase;
 import com.csio.hexagonal.application.usecase.CreateCityCommand;
 import com.csio.hexagonal.infrastructure.rest.mapper.ResponseMapper;
 import com.csio.hexagonal.infrastructure.rest.request.CreateCityRequest;
@@ -28,13 +29,16 @@ public class CityHandler {
     private static final Logger log = LoggerFactory.getLogger(CityHandler.class);
 
     private final CommandUseCase<CreateCityCommand, CityResponse> commandUseCase;
+    private final QueryUseCase<CityResponse> queryUseCase;
     private final Executor virtualExecutor;
 
     public CityHandler(
             CommandUseCase<CreateCityCommand, CityResponse> commandUseCase,
+            QueryUseCase<CityResponse> queryUseCase,
             @Qualifier("virtualExecutor") Executor virtualExecutor
     ) {
         this.commandUseCase = commandUseCase;
+        this.queryUseCase = queryUseCase;
         this.virtualExecutor = virtualExecutor;
     }
 
@@ -73,5 +77,30 @@ public class CityHandler {
                         .contentType(MediaType.APPLICATION_JSON)
                         .bodyValue(wrapper)
                 );
+    }
+
+    @Operation(
+            summary = "Get city by UID",
+            description = "Retrieve a city by its unique identifier"
+    )
+    public Mono<ServerResponse> getCity(ServerRequest request) {
+        String uid = request.pathVariable("uid");
+        String token = request.headers().firstHeader("Authorization");
+
+        log.info("Received request to get city with uid: {}", uid);
+
+        return Mono.fromCallable(() -> queryUseCase.getByUid(uid, token))
+                .subscribeOn(Schedulers.fromExecutor(virtualExecutor))
+                .flatMap(optionalCity -> optionalCity
+                        .map(city -> {
+                            log.info("City found: {}", city);
+                            return ServerResponse.ok()
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .bodyValue(ResponseMapper.success(city));
+                        })
+                        .orElseGet(() -> {
+                            log.warn("City not found with uid: {}", uid);
+                            return ServerResponse.notFound().build();
+                        }));
     }
 }

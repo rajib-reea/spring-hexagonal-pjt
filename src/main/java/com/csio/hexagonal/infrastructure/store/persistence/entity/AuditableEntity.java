@@ -9,6 +9,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @MappedSuperclass
 @Data
@@ -46,36 +47,79 @@ public abstract class AuditableEntity implements Serializable, Activatable {
     private LocalDateTime removedAt;
 
     @Override
-    public void setIsActive(boolean active) { this.isActive = active; }
+    public void setIsActive(boolean active) {
+        this.isActive = active;
+    }
 
     @Override
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
 
     @Override
-    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
 
     @Override
-    public void setRemovedAt(LocalDateTime removedAt) { this.removedAt = removedAt; }
-    
+    public void setRemovedAt(LocalDateTime removedAt) {
+        this.removedAt = removedAt;
+    }
+
     // Explicit accessors in case Lombok processing is not active during compilation
-    public String getUid() { return this.uid; }
-    public void setUid(String uid) { this.uid = uid; }
+    public String getUid() {
+        return this.uid;
+    }
 
-    public Boolean getIsActive() { return this.isActive; }
-    public void setIsActive(Boolean isActive) { this.isActive = isActive; }
+    public void setUid(String uid) {
+        this.uid = uid;
+    }
 
-    public Long getCreatedBy() { return this.createdBy; }
-    public void setCreatedBy(Long createdBy) { this.createdBy = createdBy; }
+    public Boolean getIsActive() {
+        return this.isActive;
+    }
 
-    public Long getUpdatedBy() { return this.updatedBy; }
-    public void setUpdatedBy(Long updatedBy) { this.updatedBy = updatedBy; }
+    public void setIsActive(Boolean isActive) {
+        this.isActive = isActive;
+    }
 
-    public Long getRemovedBy() { return this.removedBy; }
-    public void setRemovedBy(Long removedBy) { this.removedBy = removedBy; }
+    public Long getCreatedBy() {
+        return this.createdBy;
+    }
 
-    public LocalDateTime getCreatedAt() { return this.createdAt; }
-    public LocalDateTime getUpdatedAt() { return this.updatedAt; }
-    public LocalDateTime getRemovedAt() { return this.removedAt; }
-    
-    public Long getId() { return this.id; }
+    public void setCreatedBy(Long createdBy) {
+        this.createdBy = createdBy;
+    }
+
+    public Long getUpdatedBy() {
+        return this.updatedBy;
+    }
+
+    public void setUpdatedBy(Long updatedBy) {
+        this.updatedBy = updatedBy;
+    }
+
+    public Long getRemovedBy() {
+        return this.removedBy;
+    }
+
+    public void setRemovedBy(Long removedBy) {
+        this.removedBy = removedBy;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return this.createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return this.updatedAt;
+    }
+
+    public LocalDateTime getRemovedAt() {
+        return this.removedAt;
+    }
+
+    public Long getId() {
+        return this.id;
+    }
 }

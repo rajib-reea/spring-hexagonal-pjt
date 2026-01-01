@@ -1,16 +1,13 @@
-//package com.csio.hexagonal.application.query;
-//import java.util.UUID;
-//
-///**
-// * Read-only query object
-// * No validation logic here (simple data carrier)
-// */
-//public record GetCityQuery(UUID uid) {
-//}
 package com.csio.hexagonal.application.query;
 
+import java.util.UUID;
+
 /**
- * Read-only query object
- * No validation logic here (simple data carrier)
+ * Read-only query object for fetching a city by UID
  */
-public record GetCityQuery(java.util.UUID uid) {}
+public record GetCityQuery(UUID uid) {
+
+    public static GetCityQuery fromString(String uid) {
+        return new GetCityQuery(UUID.fromString(uid));
+    }
+}

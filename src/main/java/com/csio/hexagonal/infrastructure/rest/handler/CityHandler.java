@@ -98,45 +98,21 @@ public class CityHandler {
                     )
             }
     )
-//    public Mono<ServerResponse> getCity(ServerRequest request) {
-//
-//        String token = request.headers().firstHeader("Authorization");
-//        String uid = request.pathVariable("uid");
-//
-//        log.info("Received getCity request for uid={}", uid);
-//
-//        return Mono.defer(() -> new GetCityQuery(uid))
-//                .flatMap(query ->
-//                        getCityUseCase.query(query, token)
-//                                .subscribeOn(Schedulers.fromExecutor(virtualExecutor))
-//                )
-//                .doOnNext(res -> log.info("GetCity response: {}", res))
-//                .map(ResponseMapper::success)
-//                .flatMap(wrapper ->
-//                        ServerResponse.ok()
-//                                .contentType(MediaType.APPLICATION_JSON)
-//                                .bodyValue(wrapper)
-//                );
-//    }
     public Mono<ServerResponse> getCity(ServerRequest request) {
-
         String token = request.headers().firstHeader("Authorization");
-        UUID uid = UUID.fromString(request.pathVariable("uid"));
+        String uidStr = request.pathVariable("uid");
 
-        log.info("Received getCity request for uid={}", uid);
+        log.info("Received getCity request for uid={}", uidStr);
 
-        GetCityQuery query = new GetCityQuery(uid); // just create it
+        GetCityQuery query = GetCityQuery.fromString(uidStr);
 
         return getCityUseCase.query(query, token)
                 .subscribeOn(Schedulers.fromExecutor(virtualExecutor))
-                .doOnNext(res -> log.info("GetCity response: {}", res))
                 .map(ResponseMapper::success)
-                .flatMap(wrapper ->
-                        ServerResponse.ok()
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .bodyValue(wrapper)
+                .flatMap(wrapper -> ServerResponse.ok()
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .bodyValue(wrapper)
                 );
     }
-
 
 }

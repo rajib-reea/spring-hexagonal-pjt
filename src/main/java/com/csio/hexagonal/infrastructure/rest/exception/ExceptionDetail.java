@@ -1,4 +1,4 @@
-package com.csio.hexagonal.infrastructure.rest.response.exception;
+package com.csio.hexagonal.infrastructure.rest.exception;
 
 import java.time.Instant;
 

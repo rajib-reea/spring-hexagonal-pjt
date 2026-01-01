@@ -2,8 +2,7 @@ package com.csio.hexagonal.infrastructure.rest.exception;
 
 import com.csio.hexagonal.domain.exception.DuplicateCityException;
 import com.csio.hexagonal.domain.exception.InvalidCityNameException;
-import com.csio.hexagonal.infrastructure.rest.response.exception.ExceptionDetail;
-import com.csio.hexagonal.infrastructure.rest.response.exception.ErrorResponseWrapper;
+import com.csio.hexagonal.infrastructure.rest.response.wrapper.ErrorResponseWrapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.NonNull;
 import org.springframework.core.Ordered;

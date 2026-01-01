@@ -1,6 +1,6 @@
 package com.csio.hexagonal.infrastructure.rest.mapper;
 
-import com.csio.hexagonal.infrastructure.rest.response.SuccessResponseWrapper;
+import com.csio.hexagonal.infrastructure.rest.response.wrapper.SuccessResponseWrapper;
 
 public class ResponseMapper {
 

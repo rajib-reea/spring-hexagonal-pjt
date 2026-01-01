@@ -55,7 +55,8 @@ public class CityRepositoryAdapter implements CityPersistencePort {
 
     @Override
     public Optional<City> findByUid(UUID uid, String token) {
-        return repo.findById(String.valueOf(uid)).map(CityMapper::toModel);
+        log.info("Received UUID for uid={}", uid);
+        return repo.findByUid(String.valueOf(uid)).map(CityMapper::toModel);
     }
 
     @Override

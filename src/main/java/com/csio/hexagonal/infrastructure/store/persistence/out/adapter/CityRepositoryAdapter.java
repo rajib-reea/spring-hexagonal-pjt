@@ -4,15 +4,13 @@ package com.csio.hexagonal.infrastructure.store.persistence.out.adapter;
 import com.csio.hexagonal.infrastructure.store.persistence.mapper.CityMapper;
 import com.csio.hexagonal.application.port.out.CityPersistencePort;
 import com.csio.hexagonal.domain.model.City;
-import com.csio.hexagonal.domain.vo.CityId;
-import com.csio.hexagonal.domain.vo.State;
 import com.csio.hexagonal.infrastructure.store.persistence.entity.CityEntity;
 import com.csio.hexagonal.infrastructure.store.persistence.repo.CityRepository;
 import org.springframework.stereotype.Repository;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import java.time.LocalDateTime;
+
 import java.util.Optional;
 
 @Repository

@@ -2,11 +2,15 @@ package com.csio.hexagonal.infrastructure.rest.handler;
 
 import com.csio.hexagonal.application.port.in.CommandUseCase;
 import com.csio.hexagonal.application.command.CreateCityCommand;
+import com.csio.hexagonal.application.port.in.QueryUseCase;
+import com.csio.hexagonal.application.query.GetCityQuery;
 import com.csio.hexagonal.infrastructure.rest.mapper.ResponseMapper;
 import com.csio.hexagonal.infrastructure.rest.request.CreateCityRequest;
 import com.csio.hexagonal.infrastructure.rest.response.city.CityResponse;
 import com.csio.hexagonal.infrastructure.rest.spec.CitySpec;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
@@ -19,7 +23,9 @@ import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
+
 import java.util.concurrent.Executor;
+
 import org.springframework.http.MediaType;
 
 @Component
@@ -28,15 +34,19 @@ public class CityHandler {
     private static final Logger log = LoggerFactory.getLogger(CityHandler.class);
 
     private final CommandUseCase<CreateCityCommand, CityResponse> commandUseCase;
+    private final QueryUseCase<GetCityQuery, CityResponse> getCityUseCase;
     private final Executor virtualExecutor;
 
     public CityHandler(
             CommandUseCase<CreateCityCommand, CityResponse> commandUseCase,
+            QueryUseCase<GetCityQuery, CityResponse> getCityUseCase,
             @Qualifier("virtualExecutor") Executor virtualExecutor
     ) {
         this.commandUseCase = commandUseCase;
+        this.getCityUseCase = getCityUseCase;
         this.virtualExecutor = virtualExecutor;
     }
+
 
     @Operation(
             summary = CitySpec.CREATE_SUMMARY,
@@ -74,4 +84,59 @@ public class CityHandler {
                         .bodyValue(wrapper)
                 );
     }
+    /* ================= GET CITY ================= */
+
+    @Operation(
+            summary = CitySpec.GET_SUMMARY,
+            description = CitySpec.GET_DESCRIPTION,
+            parameters = {
+                    @Parameter(
+                            name = "uid",
+                            in = ParameterIn.PATH,
+                            required = true,
+                            description = CitySpec.PARAMETER_DESCRIPTION
+                    )
+            }
+    )
+//    public Mono<ServerResponse> getCity(ServerRequest request) {
+//
+//        String token = request.headers().firstHeader("Authorization");
+//        String uid = request.pathVariable("uid");
+//
+//        log.info("Received getCity request for uid={}", uid);
+//
+//        return Mono.defer(() -> new GetCityQuery(uid))
+//                .flatMap(query ->
+//                        getCityUseCase.query(query, token)
+//                                .subscribeOn(Schedulers.fromExecutor(virtualExecutor))
+//                )
+//                .doOnNext(res -> log.info("GetCity response: {}", res))
+//                .map(ResponseMapper::success)
+//                .flatMap(wrapper ->
+//                        ServerResponse.ok()
+//                                .contentType(MediaType.APPLICATION_JSON)
+//                                .bodyValue(wrapper)
+//                );
+//    }
+    public Mono<ServerResponse> getCity(ServerRequest request) {
+
+        String token = request.headers().firstHeader("Authorization");
+        String uid = request.pathVariable("uid");
+
+        log.info("Received getCity request for uid={}", uid);
+
+        GetCityQuery query = new GetCityQuery(uid); // just create it
+
+        return getCityUseCase.query(query, token)
+                .subscribeOn(Schedulers.fromExecutor(virtualExecutor))
+                .doOnNext(res -> log.info("GetCity response: {}", res))
+                .map(ResponseMapper::success)
+                .flatMap(wrapper ->
+                        ServerResponse.ok()
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .bodyValue(wrapper)
+                );
+    }
+
+
 }

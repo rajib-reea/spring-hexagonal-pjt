@@ -1,7 +1,11 @@
 package com.csio.hexagonal.application.port.in;
 
-import java.util.Optional;
+import reactor.core.publisher.Mono;
 
-public interface QueryUseCase<T> {
-    Optional<T> getByUid(String uid, String token);
+/**
+ * Generic query use case contract
+ */
+public interface QueryUseCase<Q, R> {
+
+    Mono<R> query(Q query, String token);
 }

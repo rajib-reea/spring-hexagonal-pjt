@@ -17,13 +17,13 @@ import java.util.concurrent.Executor;
 @Service
 public class CityService implements CommandUseCase<CreateCityCommand, CityResponse> {
 
-        private final CityPersistencePort cityOutPort;
+        private final CityPersistencePort cityPersistencePort;
     private final CityPolicy cityPolicy;
     private final Executor cpuExecutor;
     private final Executor virtualExecutor;
 
-        public CityService(CityPersistencePort cityOutPort, CityPolicy cityPolicy, Executor cpuExecutor, Executor virtualExecutor) {
-                this.cityOutPort = cityOutPort;
+        public CityService(CityPersistencePort cityPersistencePort, CityPolicy cityPolicy, Executor cpuExecutor, Executor virtualExecutor) {
+                this.cityPersistencePort = cityPersistencePort;
         this.cityPolicy = cityPolicy;
         this.cpuExecutor = cpuExecutor;
         this.virtualExecutor = virtualExecutor;
@@ -38,11 +38,11 @@ public class CityService implements CommandUseCase<CreateCityCommand, CityRespon
                 new State(command.state())
         );
 
-        return Mono.fromCallable(cityOutPort::findAll)
+        return Mono.fromCallable(cityPersistencePort::findAll)
                 .subscribeOn(Schedulers.fromExecutor(virtualExecutor))
                 .flatMap(existing -> Mono.fromRunnable(() -> cityPolicy.ensureUnique(city, existing))
                         .subscribeOn(Schedulers.fromExecutor(cpuExecutor))
-                        .then(Mono.fromCallable(() -> cityOutPort.save(city, token))
+                        .then(Mono.fromCallable(() -> cityPersistencePort.save(city, token))
                                 .subscribeOn(Schedulers.fromExecutor(virtualExecutor))))
                 .map(savedCity -> new CityResponse(
                         savedCity.getId().value().toString(),

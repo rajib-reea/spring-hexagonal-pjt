@@ -1,4 +1,4 @@
-package com.csio.hexagonal.infrastructure.config.router.operation.city;
+package com.csio.hexagonal.infrastructure.rest.router.operation.city;
 
 
 import com.csio.hexagonal.infrastructure.rest.handler.CityHandler;

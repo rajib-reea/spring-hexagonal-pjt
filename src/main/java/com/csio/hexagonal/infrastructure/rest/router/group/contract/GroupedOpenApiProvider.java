@@ -1,4 +1,4 @@
-package com.csio.hexagonal.infrastructure.config.router.group.contract;
+package com.csio.hexagonal.infrastructure.rest.router.group.contract;
 
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.responses.ApiResponse;

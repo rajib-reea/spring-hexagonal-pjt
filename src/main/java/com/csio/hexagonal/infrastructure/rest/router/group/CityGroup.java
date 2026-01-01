@@ -1,6 +1,6 @@
-package com.csio.hexagonal.infrastructure.config.router.group;
+package com.csio.hexagonal.infrastructure.rest.router.group;
 
-import com.csio.hexagonal.infrastructure.config.router.group.contract.GroupedOpenApiProvider;
+import com.csio.hexagonal.infrastructure.rest.router.group.contract.GroupedOpenApiProvider;
 import org.springdoc.core.models.GroupedOpenApi;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;

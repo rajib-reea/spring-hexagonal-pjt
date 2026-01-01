@@ -1,5 +1,7 @@
 package com.csio.hexagonal.domain.model;
 
+import com.csio.hexagonal.domain.exception.InvalidCityNameException;
+import com.csio.hexagonal.domain.exception.InvalidStateNameException;
 import com.csio.hexagonal.domain.vo.CityId;
 import com.csio.hexagonal.domain.vo.State;
 import lombok.EqualsAndHashCode;
@@ -18,12 +20,9 @@ public class City {
     private boolean active;
 
     public City(CityId id, String name, State state) {
-        if (name == null || name.isBlank()) {
-            throw new IllegalArgumentException("City name must not be empty");
-        }
-        if (state == null) {
-            throw new IllegalArgumentException("State must not be null");
-        }
+        InvalidCityNameException.validate(name);
+
+        InvalidStateNameException.validate(state.value());
 
         this.id = id;
         this.name = name;

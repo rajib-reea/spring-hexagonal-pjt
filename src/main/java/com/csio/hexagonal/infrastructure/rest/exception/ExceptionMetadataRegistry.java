@@ -4,7 +4,6 @@ import com.csio.hexagonal.domain.exception.DuplicateCityException;
 import com.csio.hexagonal.domain.exception.InvalidCityNameException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ServerWebInputException;
-
 import java.util.Map;
 import java.util.HashMap;
 

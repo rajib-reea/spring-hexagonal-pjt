@@ -10,7 +10,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebExceptionHandler;
 import reactor.core.publisher.Mono;
-
 import java.time.Instant;
 
 @Component
@@ -51,5 +50,4 @@ public class GlobalExceptionHandler implements WebExceptionHandler {
         return exchange.getResponse()
                 .writeWith(Mono.just(exchange.getResponse().bufferFactory().wrap(bytes)));
     }
-
 }

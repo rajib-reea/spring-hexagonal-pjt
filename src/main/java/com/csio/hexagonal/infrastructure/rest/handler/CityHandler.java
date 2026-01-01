@@ -19,8 +19,8 @@ import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
-
 import java.util.concurrent.Executor;
+import org.springframework.http.MediaType;
 
 @Component
 public class CityHandler {
@@ -70,7 +70,7 @@ public class CityHandler {
                 // Wrap response using ResponseMapper
                 .map(ResponseMapper::success)
                 .flatMap(wrapper -> ServerResponse.ok()
-                        .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                        .contentType(MediaType.APPLICATION_JSON)
                         .bodyValue(wrapper)
                 );
     }

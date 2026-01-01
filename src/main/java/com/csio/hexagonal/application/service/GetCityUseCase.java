@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
+import java.util.UUID;
 import java.util.concurrent.Executor;
 
 @Service
@@ -30,19 +31,21 @@ public class GetCityUseCase implements QueryUseCase<GetCityQuery, CityResponse> 
 
     @Override
     public Mono<CityResponse> query(GetCityQuery query, String token) {
+        // Convert string UID from HTTP path to UUID
+        UUID uid = UUID.fromString(String.valueOf(query.uid()));
 
-        return Mono.fromCallable(() -> cityPersistencePort.findByUid(query.uid(), token))
+        return Mono.fromCallable(() -> cityPersistencePort.findByUid(uid, token))
                 .subscribeOn(Schedulers.fromExecutor(virtualExecutor))
-                .flatMap(optionalCity -> optionalCity
-                        .map(city -> Mono.fromCallable(() -> new CityResponse(
-                                city.getId().value().toString(),
-                                city.isActive(),
-                                city.getName(),
-                                city.getState().value()
-                        )).subscribeOn(Schedulers.fromExecutor(cpuExecutor)))
-                        .orElseGet(Mono::empty)
+                .flatMap(optionalCity ->
+                        Mono.justOrEmpty(optionalCity) // unwrap Optional<City>
+                                .flatMap(city ->
+                                        Mono.fromCallable(() -> new CityResponse(
+                                                city.getId().value().toString(),
+                                                city.isActive(),
+                                                city.getName(),
+                                                city.getState().value()
+                                        )).subscribeOn(Schedulers.fromExecutor(cpuExecutor))
+                                )
                 );
     }
-
-
 }

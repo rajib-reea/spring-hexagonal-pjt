@@ -24,8 +24,8 @@ import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
+import java.util.UUID;
 import java.util.concurrent.Executor;
-
 import org.springframework.http.MediaType;
 
 @Component
@@ -121,7 +121,7 @@ public class CityHandler {
     public Mono<ServerResponse> getCity(ServerRequest request) {
 
         String token = request.headers().firstHeader("Authorization");
-        String uid = request.pathVariable("uid");
+        UUID uid = UUID.fromString(request.pathVariable("uid"));
 
         log.info("Received getCity request for uid={}", uid);
 

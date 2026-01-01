@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Optional;
+import java.util.UUID;
 
 @Repository
 public class CityRepositoryAdapter implements CityPersistencePort {
@@ -53,8 +54,8 @@ public class CityRepositoryAdapter implements CityPersistencePort {
     }
 
     @Override
-    public Optional<City> findByUid(String uid, String token) {
-        return repo.findById(uid).map(CityMapper::toModel);
+    public Optional<City> findByUid(UUID uid, String token) {
+        return repo.findById(String.valueOf(uid)).map(CityMapper::toModel);
     }
 
     @Override

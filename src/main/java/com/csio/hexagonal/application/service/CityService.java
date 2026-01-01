@@ -39,7 +39,7 @@ public class CityService implements CommandUseCase<CreateCityCommand, CityRespon
                 new State(command.state())
         );
 
-        return Mono.fromCallable(() -> cityOutPort.findAll())
+        return Mono.fromCallable(cityOutPort::findAll)
                 .subscribeOn(Schedulers.fromExecutor(virtualExecutor))
                 .flatMap(existing -> Mono.fromRunnable(() -> cityPolicy.ensureUnique(city, existing))
                         .subscribeOn(Schedulers.fromExecutor(cpuExecutor))

@@ -1,7 +1,7 @@
 package com.csio.hexagonal.infrastructure.rest.handler;
 
 import com.csio.hexagonal.application.port.in.CommandUseCase;
-import com.csio.hexagonal.application.usecase.CreateCityCommand;
+import com.csio.hexagonal.application.command.CreateCityCommand;
 import com.csio.hexagonal.infrastructure.rest.mapper.ResponseMapper;
 import com.csio.hexagonal.infrastructure.rest.request.CreateCityRequest;
 import com.csio.hexagonal.infrastructure.rest.response.city.CityResponse;

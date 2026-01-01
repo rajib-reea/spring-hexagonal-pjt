@@ -2,7 +2,7 @@ package com.csio.hexagonal.application.service;
 
 import com.csio.hexagonal.application.port.in.CommandUseCase;
 import com.csio.hexagonal.application.port.out.CityPersistencePort;
-import com.csio.hexagonal.application.usecase.CreateCityCommand;
+import com.csio.hexagonal.application.command.CreateCityCommand;
 import com.csio.hexagonal.domain.model.City;
 import com.csio.hexagonal.domain.policy.city.CityPolicy;
 import com.csio.hexagonal.domain.vo.CityId;
@@ -12,7 +12,6 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
-import java.util.List;
 import java.util.concurrent.Executor;
 
 @Service

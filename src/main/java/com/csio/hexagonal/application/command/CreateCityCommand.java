@@ -1,3 +1,3 @@
-package com.csio.hexagonal.application.usecase;
+package com.csio.hexagonal.application.command;
 
 public record CreateCityCommand(String name, String state) {}

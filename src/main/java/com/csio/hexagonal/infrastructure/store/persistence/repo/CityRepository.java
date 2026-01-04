@@ -7,5 +7,6 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface CityRepository extends JpaRepository<CityEntity, String> {
+    //this method exists as there is no method for uid defined in jpa repository
     Optional<CityEntity> findByUid(String uid);
 }

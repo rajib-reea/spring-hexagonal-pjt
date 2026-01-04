@@ -1,0 +1,423 @@
+# Architecture Block Diagram
+
+This document provides a comprehensive block diagram of the Spring Hexagonal Architecture implementation.
+
+## Overall Architecture Diagram
+
+```mermaid
+graph TB
+    subgraph "External Layer"
+        Client[Client/Swagger UI]
+    end
+
+    subgraph "Infrastructure Layer - REST"
+        Router[CityRouter<br/>Route Configuration]
+        Handler[CityHandler<br/>HTTP Handler]
+        ReqMapper[Request Mapper]
+        ResMapper[Response Mapper]
+        Validator[Validator]
+        ExceptionHandler[Global Exception Handler]
+    end
+
+    subgraph "Application Layer"
+        subgraph "Ports In"
+            CommandUseCase[CommandUseCase Interface]
+            QueryUseCase[QueryUseCase Interface]
+        end
+        
+        subgraph "Services"
+            CityService[CityService<br/>Business Logic]
+            GetCityUseCase[GetCityUseCase<br/>Query Service]
+        end
+        
+        subgraph "Commands & Queries"
+            CreateCityCommand[CreateCityCommand]
+            GetCityQuery[GetCityQuery]
+        end
+        
+        subgraph "Ports Out"
+            PersistencePort[CityPersistencePort Interface]
+        end
+    end
+
+    subgraph "Domain Layer"
+        subgraph "Entities"
+            City[City Entity]
+        end
+        
+        subgraph "Value Objects"
+            CityId[CityId]
+            State[State]
+        end
+        
+        subgraph "Policies"
+            CityPolicy[CityPolicy Interface]
+            CityPolicyEnforcer[CityPolicyEnforcer<br/>Business Rules]
+        end
+        
+        subgraph "Specifications"
+            CityNameSpec[CityNameNotEmptySpec]
+        end
+        
+        subgraph "Exceptions"
+            DomainExceptions[Domain Exceptions<br/>InvalidCityNameException<br/>InvalidStateNameException<br/>DuplicateCityException]
+        end
+    end
+
+    subgraph "Infrastructure Layer - Persistence"
+        RepoAdapter[CityRepositoryAdapter<br/>Persistence Adapter]
+        EntityMapper[Entity Mapper]
+        Repository[CityRepository<br/>JPA Repository]
+        Entity[CityEntity<br/>JPA Entity]
+    end
+
+    subgraph "Infrastructure Layer - Configuration"
+        ExecutorConfig[Executor Configuration<br/>VirtualThreadExecutor<br/>CPUExecutor]
+        AuditingConfig[Auditing Configuration]
+        JacksonConfig[Jackson Configuration]
+    end
+
+    subgraph "Data Store"
+        Database[(H2 Database)]
+    end
+
+    %% Client to Infrastructure REST
+    Client -->|HTTP Request| Router
+    Router -->|Route to Handler| Handler
+    Handler -->|Validate| Validator
+    Handler -->|Map Request| ReqMapper
+    
+    %% Infrastructure REST to Application
+    Handler -->|Command| CityService
+    Handler -->|Query| GetCityUseCase
+    Handler -->|Map Response| ResMapper
+    Handler -.->|Error Handling| ExceptionHandler
+    
+    %% Application Layer Connections
+    CityService -.->|implements| CommandUseCase
+    GetCityUseCase -.->|implements| QueryUseCase
+    CityService -->|uses| CreateCityCommand
+    GetCityUseCase -->|uses| GetCityQuery
+    CityService -->|calls| PersistencePort
+    GetCityUseCase -->|calls| PersistencePort
+    
+    %% Application to Domain
+    CityService -->|creates & validates| City
+    CityService -->|enforces| CityPolicy
+    CityPolicyEnforcer -.->|implements| CityPolicy
+    City -->|contains| CityId
+    City -->|contains| State
+    City -->|validates with| CityNameSpec
+    City -.->|throws| DomainExceptions
+    
+    %% Infrastructure Persistence Implementation
+    RepoAdapter -.->|implements| PersistencePort
+    RepoAdapter -->|maps| EntityMapper
+    RepoAdapter -->|uses| Repository
+    Repository -->|persists| Entity
+    Entity -->|stores in| Database
+    
+    %% Configuration Support
+    ExecutorConfig -.->|provides executors to| Handler
+    ExecutorConfig -.->|provides executors to| CityService
+    AuditingConfig -.->|audits| Entity
+    
+    %% Response Path
+    Handler -->|Success/Error Response| Router
+    Router -->|HTTP Response| Client
+
+    %% Styling
+    classDef infrastructure fill:#e1f5ff,stroke:#01579b,stroke-width:2px
+    classDef application fill:#fff9c4,stroke:#f57f17,stroke-width:2px
+    classDef domain fill:#c8e6c9,stroke:#2e7d32,stroke-width:2px
+    classDef external fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
+    classDef data fill:#ffccbc,stroke:#bf360c,stroke-width:2px
+    
+    class Router,Handler,ReqMapper,ResMapper,Validator,ExceptionHandler,RepoAdapter,EntityMapper,Repository,Entity,ExecutorConfig,AuditingConfig,JacksonConfig infrastructure
+    class CommandUseCase,QueryUseCase,CityService,GetCityUseCase,CreateCityCommand,GetCityQuery,PersistencePort application
+    class City,CityId,State,CityPolicy,CityPolicyEnforcer,CityNameSpec,DomainExceptions domain
+    class Client external
+    class Database data
+```
+
+## Layer Descriptions
+
+### 1. External Layer
+- **Client/Swagger UI**: External consumers of the API, including Swagger UI for testing and documentation
+
+### 2. Infrastructure Layer - REST
+- **CityRouter**: Routes HTTP requests to appropriate handlers using Spring WebFlux functional routing
+- **CityHandler**: Handles HTTP requests, validates input, maps requests/responses, and orchestrates use cases
+- **Request/Response Mappers**: Transform between HTTP DTOs and domain commands/queries
+- **Validator**: Validates incoming request data
+- **Global Exception Handler**: Centralized error handling and response formatting
+
+### 3. Application Layer
+- **Ports In (Inbound Ports)**:
+  - `CommandUseCase`: Interface for command operations (create, update, delete)
+  - `QueryUseCase`: Interface for query operations (read)
+  
+- **Services**:
+  - `CityService`: Implements business logic for city commands
+  - `GetCityUseCase`: Implements query logic for retrieving cities
+  
+- **Commands & Queries**:
+  - `CreateCityCommand`: Command object for creating cities
+  - `GetCityQuery`: Query object for retrieving cities
+  
+- **Ports Out (Outbound Ports)**:
+  - `CityPersistencePort`: Interface for persistence operations (abstraction over database)
+
+### 4. Domain Layer (Core Business Logic)
+- **Entities**:
+  - `City`: Core domain entity with identity, attributes, and business behavior
+  
+- **Value Objects**:
+  - `CityId`: Unique identifier for cities (UUID-based)
+  - `State`: Value object representing US state
+  
+- **Policies**:
+  - `CityPolicy`: Interface defining business rules
+  - `CityPolicyEnforcer`: Implements business rules like uniqueness validation
+  
+- **Specifications**:
+  - `CityNameNotEmptySpec`: Domain specification for validating city names
+  
+- **Exceptions**:
+  - Domain-specific exceptions for business rule violations
+
+### 5. Infrastructure Layer - Persistence
+- **CityRepositoryAdapter**: Adapter implementing `CityPersistencePort`, translating domain operations to JPA operations
+- **Entity Mapper**: Maps between domain models (`City`) and persistence entities (`CityEntity`)
+- **CityRepository**: Spring Data JPA repository interface
+- **CityEntity**: JPA entity with database annotations
+
+### 6. Infrastructure Layer - Configuration
+- **Executor Configuration**: Configures thread executors (virtual threads for I/O, platform threads for CPU)
+- **Auditing Configuration**: Configures JPA auditing for created/modified timestamps
+- **Jackson Configuration**: Configures JSON serialization/deserialization
+
+### 7. Data Store
+- **H2 Database**: In-memory database for development and testing
+
+## Data Flow: Create City Example
+
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant R as CityRouter
+    participant H as CityHandler
+    participant S as CityService
+    participant P as CityPolicy
+    participant City as City Entity
+    participant A as CityRepositoryAdapter
+    participant Repo as CityRepository
+    participant DB as Database
+
+    C->>R: POST /api/v1/city
+    R->>H: createCity(request)
+    H->>H: Validate & Map to CreateCityCommand
+    H->>S: create(command, token)
+    S->>City: new City(id, name, state)
+    City->>City: Validate domain rules
+    S->>A: findAll()
+    A->>Repo: findAll()
+    Repo->>DB: SELECT * FROM city
+    DB-->>Repo: List<CityEntity>
+    Repo-->>A: List<CityEntity>
+    A-->>S: List<City>
+    S->>P: ensureUnique(city, existing)
+    P->>P: Check business rules
+    P-->>S: Validation passed
+    S->>A: save(city, token)
+    A->>A: Map City to CityEntity
+    A->>Repo: save(entity)
+    Repo->>DB: INSERT INTO city
+    DB-->>Repo: CityEntity (with ID)
+    Repo-->>A: CityEntity
+    A->>A: Map CityEntity to City
+    A-->>S: City (saved)
+    S-->>H: CityResponse
+    H->>H: Wrap in SuccessResponseWrapper
+    H-->>R: ServerResponse
+    R-->>C: HTTP 200 OK
+```
+
+## GetCity Flow Diagram
+
+The diagram below shows the detailed runtime flow for the "getCity" query (GET /cities/{id}). It illustrates how an incoming HTTP request travels from the REST layer through the application and persistence layers and back to the client, including validation, mapping, and error handling.
+
+```mermaid
+sequenceDiagram
+    participant Client as Client/Swagger UI
+    participant Router as CityRouter
+    participant Handler as CityHandler
+    participant Validator as Validator
+    participant ReqMapper as Request Mapper
+    participant UseCase as GetCityUseCase
+    participant Persistence as CityPersistencePort
+    participant Adapter as CityRepositoryAdapter
+    participant Repo as CityRepository (JPA)
+    participant Entity as CityEntity
+    participant ResMapper as Response Mapper
+
+    Client->>Router: GET /cities/{id}
+    Router->>Handler: route to CityHandler.getCity(id)
+    Handler->>Validator: validate(id)
+    alt validation fails
+        Validator-->>Handler: validation error
+        Handler-->>Client: 400 Bad Request / error payload
+    else validation passes
+        Handler->>ReqMapper: map path param -> GetCityQuery
+        Handler->>UseCase: execute(GetCityQuery)
+        UseCase->>Persistence: findById(id)
+        Persistence->>Adapter: query database
+        Adapter->>Repo: jpa.findById(id)
+        Repo-->>Adapter: CityEntity
+        Adapter->>Entity: map CityEntity -> Domain City
+        Adapter-->>Persistence: return Domain City
+        UseCase-->>ResMapper: map Domain City -> CityResponseDTO
+        ResMapper-->>Handler: CityResponseDTO
+        Handler-->>Client: 200 OK + CityResponseDTO
+    end
+
+    note right of Handler: Any uncaught exceptions are handled by the Global Exception Handler
+```
+
+## Key Architectural Principles
+
+### Hexagonal Architecture (Ports & Adapters)
+1. **Domain Layer** is at the core and has no dependencies on outer layers
+2. **Application Layer** depends only on the domain
+3. **Infrastructure Layer** depends on both domain and application layers
+4. **Dependency Rule**: Dependencies point inward toward the domain
+
+### Design Patterns Used
+1. **Ports and Adapters**: Clear separation between business logic and infrastructure
+2. **Command Query Responsibility Segregation (CQRS)**: Separate commands and queries
+3. **Repository Pattern**: Abstract data access through repositories
+4. **Mapper Pattern**: Transform between layers using dedicated mappers
+5. **Specification Pattern**: Encapsulate business rules in reusable specifications
+6. **Policy Pattern**: Enforce business policies independently
+
+### Technology Stack
+- **Framework**: Spring Boot 4.0.1 with WebFlux (reactive)
+- **Database**: Spring Data JPA with H2
+- **API Documentation**: SpringDoc OpenAPI 3.0.0
+- **Mapping**: MapStruct 1.6.3
+- **Build Tool**: Maven
+- **Java Version**: JDK 25
+
+### Concurrency Model
+- **Virtual Threads**: Used for blocking I/O operations (database calls)
+- **CPU Executor**: Used for CPU-intensive operations (business rule validation)
+- **Reactive Streams**: WebFlux for non-blocking HTTP handling
+
+## File Organization
+
+```
+src/main/java/com/csio/hexagonal/
+├── CityServiceApplication.java          # Main application entry point
+├── application/                         # Application Layer
+│   ├── command/
+│   │   └── CreateCityCommand.java       # Command object
+│   ├── query/
+│   │   └── GetCityQuery.java            # Query object
+│   ├── port/
+│   │   ├── in/                          # Inbound ports
+│   │   │   ├── CommandUseCase.java
+│   │   │   └── QueryUseCase.java
+│   │   └── out/                         # Outbound ports
+│   │       ├── CityPersistencePort.java
+│   │       └── ServiceContract.java
+│   └── service/
+│       ├── CityService.java             # Command use case implementation
+│       └── GetCityUseCase.java          # Query use case implementation
+├── domain/                              # Domain Layer
+│   ├── exception/
+│   │   ├── DuplicateCityException.java
+│   │   ├── InvalidCityNameException.java
+│   │   └── InvalidStateNameException.java
+│   ├── model/
+│   │   └── City.java                    # Domain entity
+│   ├── policy/city/
+│   │   ├── CityPolicy.java              # Policy interface
+│   │   └── CityPolicyEnforcer.java      # Policy implementation
+│   ├── specification/
+│   │   └── CityNameNotEmptySpec.java    # Domain specification
+│   └── vo/
+│       ├── CityId.java                  # Value object
+│       └── State.java                   # Value object
+└── infrastructure/                      # Infrastructure Layer
+    ├── config/
+    │   ├── executor/
+    │   │   ├── AsyncExecutorProperties.java
+    │   │   ├── PlatformTaskExecutorConfig.java
+    │   │   └── VirtualThreadExecutorConfig.java
+    │   ├── AuditingConfig.java
+    │   └── JacksonConfig.java
+    ├── rest/
+    │   ├── exception/
+    │   │   ├── ExceptionDetail.java
+    │   │   ├── ExceptionMetadataRegistry.java
+    │   │   └── GlobalExceptionHandler.java
+    │   ├── handler/
+    │   │   └── CityHandler.java          # HTTP handler
+    │   ├── mapper/
+    │   │   ├── CityMapper.java
+    │   │   └── ResponseMapper.java
+    │   ├── request/
+    │   │   └── CreateCityRequest.java
+    │   ├── response/
+    │   │   ├── city/CityResponse.java
+    │   │   ├── ResponseInclusion.java
+    │   │   └── wrapper/
+    │   │       ├── ErrorResponseWrapper.java
+    │   │       └── SuccessResponseWrapper.java
+    │   ├── router/
+    │   │   ├── group/
+    │   │   │   ├── CityGroup.java
+    │   │   │   └── contract/GroupedOpenApiProvider.java
+    │   │   └── operation/city/
+    │   │       └── CityRouter.java       # Route configuration
+    │   ├── spec/
+    │   │   └── CitySpec.java             # OpenAPI spec
+    │   └── validator/
+    │       └── Validator.java
+    └── store/persistence/
+        ├── entity/
+        │   ├── AuditableEntity.java
+        │   ├── CityEntity.java           # JPA entity
+        │   └── contract/Activatable.java
+        ├── mapper/
+        │   └── CityMapper.java            # Entity mapper
+        ├── out/adapter/
+        │   └── CityRepositoryAdapter.java # Persistence adapter
+        └── repo/
+            └── CityRepository.java        # JPA repository
+```
+
+## Testing Strategy
+
+The architecture supports multiple testing levels:
+
+1. **Unit Tests**:
+   - Domain logic (entities, value objects, policies)
+   - Application services (with mocked ports)
+   - Mappers and utilities
+
+2. **Integration Tests**:
+   - Repository adapters with test database
+   - REST handlers with WebTestClient
+
+3. **End-to-End Tests**:
+   - Full API testing through HTTP endpoints
+
+## Benefits of This Architecture
+
+1. **Testability**: Each layer can be tested independently
+2. **Maintainability**: Clear separation of concerns
+3. **Flexibility**: Easy to swap implementations (e.g., change database)
+4. **Domain Focus**: Business logic is isolated and protected
+5. **Technology Independence**: Domain doesn't depend on frameworks
+6. **Scalability**: Reactive stack with proper thread management

@@ -372,7 +372,7 @@ src/main/java/com/csio/hexagonal/
     │   ├── handler/
     │   │   └── CityHandler.java          # HTTP handler
     │   ├── mapper/
-    │   │   └── CityMapper.java           # Request/Response mapper
+    │   │   └── CityMapper.java           # Mapper (currently unused)
     │   ├── request/
     │   │   └── CreateCityRequest.java
     │   ├── response/

@@ -8,11 +8,11 @@ public interface ServiceContract<T, R, ID> {
 
     R save(T entity, String token);
 
-    Optional<T> findByUid(UUID id, String token);
+    Optional<T> findByUid(ID id, String token);
 
-    List<T> findAll(String token);  // <-- added generic findAll
+    List<T> findAll(String token);
 
-    T update(String uid, T entity, String token);
+    T update(ID id, T entity, String token);
 
-    void deleteByUid(String uid, String token);
+    void deleteByUid(ID id, String token);
 }

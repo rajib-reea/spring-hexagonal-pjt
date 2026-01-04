@@ -272,10 +272,11 @@ sequenceDiagram
         Handler-->>Client: 400 Bad Request / error payload
     else validation passes
         Handler->>ReqMapper: map path param -> GetCityQuery
-        Handler->>UseCase: query(GetCityQuery)
-        UseCase->>Persistence: findByUid(id)
+        Handler->>UseCase: query(GetCityQuery, token)
+        UseCase->>UseCase: Extract UUID from query
+        UseCase->>Persistence: findByUid(uuid, token)
         Persistence->>Adapter: query database
-        Adapter->>Repo: jpa.findByUid(id)
+        Adapter->>Repo: jpa.findByUid(uuid)
         Repo-->>Adapter: CityEntity
         Adapter->>Entity: map CityEntity -> Domain City
         Adapter-->>Persistence: return Domain City

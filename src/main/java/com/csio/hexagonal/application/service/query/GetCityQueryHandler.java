@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
+import java.util.UUID;
 import java.util.concurrent.Executor;
 
 @Service
@@ -33,7 +34,7 @@ public class GetCityQueryHandler implements QueryUseCase<GetCityQuery, CityRespo
         // Convert UUID from query to CityId value object
         CityId cityId = new CityId(query.uid());
         log.info("Received CityId  for cityId={}", cityId);
-        return Mono.fromCallable(() -> cityPersistencePort.findByUid(cityId.value(), token))
+        return Mono.fromCallable(() -> cityPersistencePort.findByUid(UUID.fromString(String.valueOf(cityId.value())), token))
                 .subscribeOn(Schedulers.fromExecutor(virtualExecutor))
                 .flatMap(Mono::justOrEmpty) // unwrap Optional<City>
                 .map(city -> new CityResponse(

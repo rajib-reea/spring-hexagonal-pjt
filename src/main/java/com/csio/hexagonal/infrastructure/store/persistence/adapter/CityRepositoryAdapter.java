@@ -1,6 +1,5 @@
 package com.csio.hexagonal.infrastructure.store.persistence.adapter;
 
-
 import com.csio.hexagonal.infrastructure.store.persistence.mapper.CityMapper;
 import com.csio.hexagonal.application.port.out.CityServiceContract;
 import com.csio.hexagonal.domain.model.City;
@@ -59,7 +58,7 @@ public class CityRepositoryAdapter implements CityServiceContract {
     }
 
     @Override
-    public City update(String uid, City entity, String token) {
+    public City update(UUID uid, City entity, String token) {
         // naive implementation: map to entity and save
         CityEntity e = CityMapper.toEntity(entity);
         CityEntity saved = repo.save(e);
@@ -67,7 +66,7 @@ public class CityRepositoryAdapter implements CityServiceContract {
     }
 
     @Override
-    public void deleteByUid(String uid, String token) {
-        repo.deleteById(uid);
+    public void deleteByUid(UUID uid, String token) {
+        repo.deleteById(String.valueOf(uid));
     }
 }

@@ -1,17 +1,28 @@
-## Run the Project:
-
-This repo uses jdk version 25.
-````
-mvn clean spring-boot:run
-````
 # Hexagonal Project
 
 This repository contains a small hexagonal-architecture Java service.
 
+## 📊 Architecture Documentation
+
+**[View Complete Architecture Block Diagram →](ARCHITECTURE.md)**
+
+The `ARCHITECTURE.md` file contains comprehensive block diagrams showing:
+- Overall hexagonal architecture structure
+- Layer-by-layer component breakdown
+- Data flow sequence diagrams
+- Complete file organization
+- Key design patterns and principles
+
 ## Run the Project
 
-Build and run (requires Maven and Java):
+This repo uses jdk version 25.
 
+**Quick Start:**
+```bash
+mvn clean spring-boot:run
+```
+
+**Build and run (requires Maven and Java):**
 ```bash
 mvn -DskipTests package
 java -jar target/*.jar

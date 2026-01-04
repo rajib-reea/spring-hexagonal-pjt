@@ -1,4 +1,4 @@
-package com.csio.hexagonal.application.query;
+package com.csio.hexagonal.application.service.query;
 
 import java.util.UUID;
 

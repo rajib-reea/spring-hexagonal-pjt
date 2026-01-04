@@ -1,9 +1,9 @@
 package com.csio.hexagonal.infrastructure.rest.handler;
 
 import com.csio.hexagonal.application.port.in.CommandUseCase;
-import com.csio.hexagonal.application.command.CreateCityCommand;
+import com.csio.hexagonal.application.service.command.CreateCityCommand;
 import com.csio.hexagonal.application.port.in.QueryUseCase;
-import com.csio.hexagonal.application.query.GetCityQuery;
+import com.csio.hexagonal.application.service.query.GetCityQuery;
 import com.csio.hexagonal.infrastructure.rest.mapper.ResponseMapper;
 import com.csio.hexagonal.infrastructure.rest.request.CreateCityRequest;
 import com.csio.hexagonal.infrastructure.rest.response.city.CityResponse;
@@ -24,7 +24,6 @@ import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
-import java.util.UUID;
 import java.util.concurrent.Executor;
 import org.springframework.http.MediaType;
 

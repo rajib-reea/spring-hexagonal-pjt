@@ -4,7 +4,7 @@ import com.csio.hexagonal.application.port.in.CommandUseCase;
 import com.csio.hexagonal.application.service.command.CreateCityCommand;
 import com.csio.hexagonal.application.port.in.QueryUseCase;
 import com.csio.hexagonal.application.service.query.GetCityQuery;
-import com.csio.hexagonal.infrastructure.rest.mapper.ResponseMapper;
+import com.csio.hexagonal.infrastructure.rest.response.helper.ResponseHelper;
 import com.csio.hexagonal.infrastructure.rest.request.CreateCityRequest;
 import com.csio.hexagonal.infrastructure.rest.response.city.CityResponse;
 import com.csio.hexagonal.infrastructure.rest.spec.CitySpec;
@@ -77,7 +77,7 @@ public class CityHandler {
                         .subscribeOn(Schedulers.fromExecutor(virtualExecutor)))
                 .doOnNext(res -> log.info("Service returned response: {}", res))
                 // Wrap response using ResponseMapper
-                .map(ResponseMapper::success)
+                .map(ResponseHelper::success)
                 .flatMap(wrapper -> ServerResponse.ok()
                         .contentType(MediaType.APPLICATION_JSON)
                         .bodyValue(wrapper)
@@ -107,7 +107,7 @@ public class CityHandler {
 
         return getCityUseCase.query(query, token)
                 .subscribeOn(Schedulers.fromExecutor(virtualExecutor))
-                .map(ResponseMapper::success)
+                .map(ResponseHelper::success)
                 .flatMap(wrapper -> ServerResponse.ok()
                         .contentType(MediaType.APPLICATION_JSON)
                         .bodyValue(wrapper)

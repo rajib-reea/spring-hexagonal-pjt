@@ -35,7 +35,7 @@ java -jar target/*.jar
 
 Feel free to edit this README; let me know if you want the tree in a different format.
 
-## External API Integration (third-party APIs)
+## [Not Implemented] External API Integration (third-party APIs)
 
 Recommended steps to add a third‑party API (e.g. Meta API, Google API):
 

@@ -1,4 +1,4 @@
-package com.csio.hexagonal.application.command;
+package com.csio.hexagonal.application.service.command;
 
 import com.csio.hexagonal.application.port.in.CommandUseCase;
 import com.csio.hexagonal.application.port.out.CityPersistencePort;

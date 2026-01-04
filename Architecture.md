@@ -13,8 +13,7 @@ graph TB
     subgraph "Infrastructure Layer - REST"
         Router[CityRouter<br/>Route Configuration]
         Handler[CityHandler<br/>HTTP Handler]
-        ReqMapper[Request Mapper]
-        ResMapper[Response Mapper]
+        ResponseHelper[ResponseHelper<br/>Response Wrapper Utility]
         Validator[Validator]
         ExceptionHandler[Global Exception Handler]
     end
@@ -86,12 +85,11 @@ graph TB
     Client -->|HTTP Request| Router
     Router -->|Route to Handler| Handler
     Handler -->|Validate| Validator
-    Handler -->|Map Request| ReqMapper
     
     %% Infrastructure REST to Application
     Handler -->|Command| CreateCityCommandHandler
     Handler -->|Query| GetCityQueryHandler
-    Handler -->|Map Response| ResMapper
+    Handler -->|Wrap Response| ResponseHelper
     Handler -.->|Error Handling| ExceptionHandler
     
     %% Application Layer Connections
@@ -135,7 +133,7 @@ graph TB
     classDef external fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
     classDef data fill:#ffccbc,stroke:#bf360c,stroke-width:2px
     
-    class Router,Handler,ReqMapper,ResMapper,Validator,ExceptionHandler,RepoAdapter,EntityMapper,Repository,Entity,ExecutorConfig,AuditingConfig,JacksonConfig infrastructure
+    class Router,Handler,ResponseHelper,Validator,ExceptionHandler,RepoAdapter,EntityMapper,Repository,Entity,ExecutorConfig,AuditingConfig,JacksonConfig infrastructure
     class CommandUseCase,QueryUseCase,CreateCityCommandHandler,GetCityQueryHandler,CreateCityCommand,GetCityQuery,ServiceContract,CityServiceContract application
     class City,CityId,State,CityPolicy,CityPolicyEnforcer,CityNameSpec,DomainExceptions domain
     class Client external
@@ -149,10 +147,11 @@ graph TB
 
 ### 2. Infrastructure Layer - REST
 - **CityRouter**: Routes HTTP requests to appropriate handlers using Spring WebFlux functional routing
-- **CityHandler**: Handles HTTP requests, validates input, maps requests/responses, and orchestrates use cases
-- **Request/Response Mappers**: Transform between HTTP DTOs and domain commands/queries
+- **CityHandler**: Handles HTTP requests, validates input, and orchestrates use cases. Maps requests inline to commands/queries
+- **ResponseHelper**: Utility class for wrapping responses in SuccessResponseWrapper
 - **Validator**: Validates incoming request data
 - **Global Exception Handler**: Centralized error handling and response formatting
+- **Note**: CityMapper exists in the codebase but is currently unused; mapping is done inline in handlers and use cases
 
 ### 3. Application Layer
 - **Ports In (Inbound Ports)**:
@@ -216,6 +215,7 @@ sequenceDiagram
     participant A as CityRepositoryAdapter
     participant Repo as CityRepository
     participant DB as Database
+    participant Helper as ResponseHelper
 
     C->>R: POST /api/v1/city
     R->>H: createCity(request)
@@ -223,7 +223,7 @@ sequenceDiagram
     H->>S: create(command, token)
     S->>City: new City(id, name, state)
     City->>City: Validate domain rules
-    S->>A: findAll()
+    S->>A: findAll(token)
     A->>Repo: findAll()
     Repo->>DB: SELECT * FROM city
     DB-->>Repo: List<CityEntity>
@@ -240,8 +240,10 @@ sequenceDiagram
     Repo-->>A: CityEntity
     A->>A: Map CityEntity to City
     A-->>S: City (saved)
+    S->>S: Map City to CityResponse
     S-->>H: CityResponse
-    H->>H: Wrap in SuccessResponseWrapper
+    H->>Helper: success(CityResponse)
+    Helper-->>H: SuccessResponseWrapper
     H-->>R: ServerResponse
     R-->>C: HTTP 200 OK
 ```
@@ -256,13 +258,12 @@ sequenceDiagram
     participant Router as CityRouter
     participant Handler as CityHandler
     participant Validator as Validator
-    participant ReqMapper as Request Mapper
     participant UseCase as GetCityQueryHandler
     participant Persistence as CityServiceContract
     participant Adapter as CityRepositoryAdapter
     participant Repo as CityRepository (JPA)
     participant Entity as CityEntity
-    participant ResMapper as Response Mapper
+    participant Helper as ResponseHelper
 
     Client->>Router: GET /cities/{id}
     Router->>Handler: route to CityHandler.getCity(id)
@@ -271,7 +272,7 @@ sequenceDiagram
         Validator-->>Handler: validation error
         Handler-->>Client: 400 Bad Request / error payload
     else validation passes
-        Handler->>ReqMapper: map path param -> GetCityQuery
+        Handler->>Handler: map path param -> GetCityQuery
         Handler->>UseCase: query(GetCityQuery, token)
         UseCase->>UseCase: Extract UUID from query
         UseCase->>Persistence: findByUid(UUID, token)
@@ -281,9 +282,11 @@ sequenceDiagram
         Repo-->>Adapter: Optional<CityEntity>
         Adapter->>Adapter: map CityEntity -> Domain City
         Adapter-->>Persistence: Optional<City>
-        UseCase-->>ResMapper: map Domain City -> CityResponseDTO
-        ResMapper-->>Handler: CityResponseDTO
-        Handler-->>Client: 200 OK + CityResponseDTO
+        UseCase->>UseCase: map City -> CityResponse
+        UseCase-->>Handler: CityResponse
+        Handler->>Helper: success(CityResponse)
+        Helper-->>Handler: SuccessResponseWrapper
+        Handler-->>Client: 200 OK + SuccessResponseWrapper
     end
 
     note right of Handler: Any uncaught exceptions are handled by the Global Exception Handler
@@ -369,13 +372,14 @@ src/main/java/com/csio/hexagonal/
     │   ├── handler/
     │   │   └── CityHandler.java          # HTTP handler
     │   ├── mapper/
-    │   │   ├── CityMapper.java
-    │   │   └── ResponseMapper.java
+    │   │   └── CityMapper.java           # Request/Response mapper
     │   ├── request/
     │   │   └── CreateCityRequest.java
     │   ├── response/
     │   │   ├── city/CityResponse.java
     │   │   ├── ResponseInclusion.java
+    │   │   ├── helper/
+    │   │   │   └── ResponseHelper.java   # Response wrapper utility
     │   │   └── wrapper/
     │   │       ├── ErrorResponseWrapper.java
     │   │       └── SuccessResponseWrapper.java
@@ -395,10 +399,9 @@ src/main/java/com/csio/hexagonal/
         │   ├── CityEntity.java           # JPA entity
         │   └── contract/Activatable.java
         ├── mapper/
-        │   └── CityMapper.java            # Entity mapper
-        ├── adapter/
-        │   └── CityRepositoryAdapter.java # Persistence adapter
-        └── repo/
+        │   └── CityMapper.java            # Entity mapper (domain <-> JPA)
+        └── adapter/
+            ├── CityRepositoryAdapter.java # Persistence adapter
             └── CityRepository.java        # JPA repository
 ```
 

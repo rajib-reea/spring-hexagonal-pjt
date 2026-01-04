@@ -274,13 +274,13 @@ sequenceDiagram
         Handler->>ReqMapper: map path param -> GetCityQuery
         Handler->>UseCase: query(GetCityQuery, token)
         UseCase->>UseCase: Extract UUID from query
-        UseCase->>Persistence: findByUid(uuid, token)
-        Persistence->>Adapter: query database with UUID
+        UseCase->>Persistence: findByUid(UUID, token)
+        Persistence->>Adapter: findByUid(UUID, token)
         Adapter->>Adapter: Convert UUID to String
-        Adapter->>Repo: jpa.findByUid(String)
-        Repo-->>Adapter: CityEntity
-        Adapter->>Entity: map CityEntity -> Domain City
-        Adapter-->>Persistence: return Domain City
+        Adapter->>Repo: findByUid(String)
+        Repo-->>Adapter: Optional<CityEntity>
+        Adapter->>Adapter: map CityEntity -> Domain City
+        Adapter-->>Persistence: Optional<City>
         UseCase-->>ResMapper: map Domain City -> CityResponseDTO
         ResMapper-->>Handler: CityResponseDTO
         Handler-->>Client: 200 OK + CityResponseDTO

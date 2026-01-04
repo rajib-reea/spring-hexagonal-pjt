@@ -5,7 +5,6 @@ import com.csio.hexagonal.infrastructure.store.persistence.mapper.CityMapper;
 import com.csio.hexagonal.application.port.out.CityServiceContract;
 import com.csio.hexagonal.domain.model.City;
 import com.csio.hexagonal.infrastructure.store.persistence.entity.CityEntity;
-import com.csio.hexagonal.infrastructure.store.persistence.repo.CityRepository;
 import org.springframework.stereotype.Repository;
 import java.util.List;
 import org.slf4j.Logger;

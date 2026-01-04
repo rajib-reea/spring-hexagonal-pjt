@@ -1,7 +1,7 @@
 package com.csio.hexagonal.application.service.query;
 
 import com.csio.hexagonal.application.port.in.QueryUseCase;
-import com.csio.hexagonal.application.port.out.CityPersistencePort;
+import com.csio.hexagonal.application.port.out.CityServiceContract;
 import com.csio.hexagonal.domain.vo.CityId;
 import com.csio.hexagonal.infrastructure.rest.response.city.CityResponse;
 import org.slf4j.Logger;
@@ -16,11 +16,11 @@ import java.util.concurrent.Executor;
 public class GetCityQueryHandler implements QueryUseCase<GetCityQuery, CityResponse> {
     private static final Logger log = LoggerFactory.getLogger(GetCityQueryHandler.class);
 
-    private final CityPersistencePort cityPersistencePort;
+    private final CityServiceContract cityPersistencePort;
     private final Executor virtualExecutor;
 
     public GetCityQueryHandler(
-            CityPersistencePort cityPersistencePort,
+            CityServiceContract cityPersistencePort,
             Executor virtualExecutor
     ) {
         this.cityPersistencePort = cityPersistencePort;

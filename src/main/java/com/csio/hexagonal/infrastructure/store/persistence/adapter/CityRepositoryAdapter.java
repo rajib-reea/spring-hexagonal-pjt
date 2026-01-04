@@ -2,7 +2,7 @@ package com.csio.hexagonal.infrastructure.store.persistence.adapter;
 
 
 import com.csio.hexagonal.infrastructure.store.persistence.mapper.CityMapper;
-import com.csio.hexagonal.application.port.out.CityPersistencePort;
+import com.csio.hexagonal.application.port.out.CityServiceContract;
 import com.csio.hexagonal.domain.model.City;
 import com.csio.hexagonal.infrastructure.store.persistence.entity.CityEntity;
 import com.csio.hexagonal.infrastructure.store.persistence.repo.CityRepository;
@@ -14,7 +14,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Repository
-public class CityRepositoryAdapter implements CityPersistencePort {
+public class CityRepositoryAdapter implements CityServiceContract {
 
     private final CityRepository repo;
     private static final Logger log = LoggerFactory.getLogger(CityRepositoryAdapter.class);

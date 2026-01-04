@@ -83,3 +83,44 @@ and server:
     mbeanregistry:
       enabled: true
 ```
+
+server:
+  port: 8080
+
+  tomcat:
+    max-connections: 200
+    accept-count: 100
+    connection-timeout: 20000
+
+    keep-alive-timeout: 15000
+    max-keep-alive-requests: 100
+
+    max-swallow-size: -1
+@GetMapping("/download/{name}")
+public ResponseEntity<StreamingResponseBody> download(@PathVariable String name) {
+
+    StreamingResponseBody stream = output -> {
+        try (InputStream in = Files.newInputStream(Path.of("/data/" + name))) {
+            in.transferTo(output);
+        } catch (org.apache.catalina.connector.ClientAbortException e) {
+            // client disconnected — normal, ignore
+        }
+    };
+
+    return ResponseEntity.ok().body(stream);
+}
+@PostMapping("/upload")
+public void upload(MultipartFile file) throws IOException {
+
+    try (InputStream in = file.getInputStream();
+         OutputStream out = Files.newOutputStream(Path.of("/data/file.bin"))) {
+
+        byte[] buffer = new byte[8192];
+        int len;
+        while ((len = in.read(buffer)) != -1) {
+            out.write(buffer, 0, len);
+        }
+    } catch (org.apache.catalina.connector.ClientAbortException e) {
+        // Abort upload safely
+    }
+}

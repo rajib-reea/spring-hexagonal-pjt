@@ -1,8 +1,7 @@
-package com.csio.hexagonal.application.service;
+package com.csio.hexagonal.application.command;
 
 import com.csio.hexagonal.application.port.in.CommandUseCase;
 import com.csio.hexagonal.application.port.out.CityPersistencePort;
-import com.csio.hexagonal.application.command.CreateCityCommand;
 import com.csio.hexagonal.domain.model.City;
 import com.csio.hexagonal.domain.policy.city.CityPolicy;
 import com.csio.hexagonal.domain.vo.CityId;
@@ -15,14 +14,14 @@ import reactor.core.scheduler.Schedulers;
 import java.util.concurrent.Executor;
 
 @Service
-public class CityService implements CommandUseCase<CreateCityCommand, CityResponse> {
+public class CreateCityCommandHandler implements CommandUseCase<CreateCityCommand, CityResponse> {
 
         private final CityPersistencePort cityPersistencePort;
     private final CityPolicy cityPolicy;
     private final Executor cpuExecutor;
     private final Executor virtualExecutor;
 
-        public CityService(CityPersistencePort cityPersistencePort, CityPolicy cityPolicy, Executor cpuExecutor, Executor virtualExecutor) {
+        public CreateCityCommandHandler(CityPersistencePort cityPersistencePort, CityPolicy cityPolicy, Executor cpuExecutor, Executor virtualExecutor) {
                 this.cityPersistencePort = cityPersistencePort;
         this.cityPolicy = cityPolicy;
         this.cpuExecutor = cpuExecutor;

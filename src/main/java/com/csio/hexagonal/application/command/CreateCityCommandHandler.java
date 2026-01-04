@@ -10,19 +10,18 @@ import com.csio.hexagonal.infrastructure.rest.response.city.CityResponse;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
-
 import java.util.concurrent.Executor;
 
 @Service
 public class CreateCityCommandHandler implements CommandUseCase<CreateCityCommand, CityResponse> {
 
-        private final CityPersistencePort cityPersistencePort;
+    private final CityPersistencePort cityPersistencePort;
     private final CityPolicy cityPolicy;
     private final Executor cpuExecutor;
     private final Executor virtualExecutor;
 
-        public CreateCityCommandHandler(CityPersistencePort cityPersistencePort, CityPolicy cityPolicy, Executor cpuExecutor, Executor virtualExecutor) {
-                this.cityPersistencePort = cityPersistencePort;
+    public CreateCityCommandHandler(CityPersistencePort cityPersistencePort, CityPolicy cityPolicy, Executor cpuExecutor, Executor virtualExecutor) {
+        this.cityPersistencePort = cityPersistencePort;
         this.cityPolicy = cityPolicy;
         this.cpuExecutor = cpuExecutor;
         this.virtualExecutor = virtualExecutor;
@@ -37,7 +36,7 @@ public class CreateCityCommandHandler implements CommandUseCase<CreateCityComman
                 new State(command.state())
         );
 
-        return Mono.fromCallable(cityPersistencePort::findAll)
+        return Mono.fromCallable(() -> cityPersistencePort.findAll(token))  // <-- pass token
                 .subscribeOn(Schedulers.fromExecutor(virtualExecutor))
                 .flatMap(existing -> Mono.fromRunnable(() -> cityPolicy.ensureUnique(city, existing))
                         .subscribeOn(Schedulers.fromExecutor(cpuExecutor))

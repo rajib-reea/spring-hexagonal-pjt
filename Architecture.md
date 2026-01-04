@@ -275,8 +275,9 @@ sequenceDiagram
         Handler->>UseCase: query(GetCityQuery, token)
         UseCase->>UseCase: Extract UUID from query
         UseCase->>Persistence: findByUid(uuid, token)
-        Persistence->>Adapter: query database
-        Adapter->>Repo: jpa.findByUid(uuid)
+        Persistence->>Adapter: query database with UUID
+        Adapter->>Adapter: Convert UUID to String
+        Adapter->>Repo: jpa.findByUid(String)
         Repo-->>Adapter: CityEntity
         Adapter->>Entity: map CityEntity -> Domain City
         Adapter-->>Persistence: return Domain City

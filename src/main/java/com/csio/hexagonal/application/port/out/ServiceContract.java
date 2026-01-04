@@ -1,5 +1,6 @@
 package com.csio.hexagonal.application.port.out;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -9,7 +10,7 @@ public interface ServiceContract<T, R, ID> {
 
     Optional<T> findByUid(UUID id, String token);
 
-    // Page<T> findAll(Pagination paginationRequest, String token);
+    List<T> findAll(String token);  // <-- added generic findAll
 
     T update(String uid, T entity, String token);
 

@@ -45,11 +45,12 @@ public class CityRepositoryAdapter implements CityPersistencePort {
     }
 
     @Override
-    public List<City> findAll() {
+    public List<City> findAll(String token) {
+        // token can be ignored if not used in DB layer
         return repo.findAll()
-                   .stream()
-                   .map(CityMapper::toModel)
-                   .toList();
+                .stream()
+                .map(CityMapper::toModel)
+                .toList();
     }
 
     @Override

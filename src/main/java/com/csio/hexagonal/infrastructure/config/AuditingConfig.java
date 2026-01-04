@@ -1,10 +1,10 @@
-// package com.csio.hexagonal.infrastructure.config;
+package com.csio.hexagonal.infrastructure.config;
 
-// import org.springframework.context.annotation.Configuration;
-// import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 
-// @Configuration
-// @EnableJpaAuditing
-// public class AuditingConfig {
+@Configuration
+@EnableJpaAuditing
+public class AuditingConfig {
 
-// }
+}

@@ -26,8 +26,8 @@ graph TB
         end
         
         subgraph "Services"
-            CityService[CityService<br/>Business Logic]
-            GetCityUseCase[GetCityUseCase<br/>Query Service]
+            CreateCityCommandHandler[CreateCityCommandHandler<br/>Command Handler]
+            GetCityQueryHandler[GetCityQueryHandler<br/>Query Handler]
         end
         
         subgraph "Commands & Queries"
@@ -36,7 +36,8 @@ graph TB
         end
         
         subgraph "Ports Out"
-            PersistencePort[CityPersistencePort Interface]
+            ServiceContract[ServiceContract Interface]
+            CityServiceContract[CityServiceContract Interface]
         end
     end
 
@@ -88,22 +89,23 @@ graph TB
     Handler -->|Map Request| ReqMapper
     
     %% Infrastructure REST to Application
-    Handler -->|Command| CityService
-    Handler -->|Query| GetCityUseCase
+    Handler -->|Command| CreateCityCommandHandler
+    Handler -->|Query| GetCityQueryHandler
     Handler -->|Map Response| ResMapper
     Handler -.->|Error Handling| ExceptionHandler
     
     %% Application Layer Connections
-    CityService -.->|implements| CommandUseCase
-    GetCityUseCase -.->|implements| QueryUseCase
-    CityService -->|uses| CreateCityCommand
-    GetCityUseCase -->|uses| GetCityQuery
-    CityService -->|calls| PersistencePort
-    GetCityUseCase -->|calls| PersistencePort
+    CreateCityCommandHandler -.->|implements| CommandUseCase
+    GetCityQueryHandler -.->|implements| QueryUseCase
+    CreateCityCommandHandler -->|uses| CreateCityCommand
+    GetCityQueryHandler -->|uses| GetCityQuery
+    CreateCityCommandHandler -->|calls| CityServiceContract
+    GetCityQueryHandler -->|calls| CityServiceContract
+    CityServiceContract -.->|extends| ServiceContract
     
     %% Application to Domain
-    CityService -->|creates & validates| City
-    CityService -->|enforces| CityPolicy
+    CreateCityCommandHandler -->|creates & validates| City
+    CreateCityCommandHandler -->|enforces| CityPolicy
     CityPolicyEnforcer -.->|implements| CityPolicy
     City -->|contains| CityId
     City -->|contains| State
@@ -111,7 +113,7 @@ graph TB
     City -.->|throws| DomainExceptions
     
     %% Infrastructure Persistence Implementation
-    RepoAdapter -.->|implements| PersistencePort
+    RepoAdapter -.->|implements| CityServiceContract
     RepoAdapter -->|maps| EntityMapper
     RepoAdapter -->|uses| Repository
     Repository -->|persists| Entity
@@ -119,7 +121,7 @@ graph TB
     
     %% Configuration Support
     ExecutorConfig -.->|provides executors to| Handler
-    ExecutorConfig -.->|provides executors to| CityService
+    ExecutorConfig -.->|provides executors to| CreateCityCommandHandler
     AuditingConfig -.->|audits| Entity
     
     %% Response Path
@@ -134,7 +136,7 @@ graph TB
     classDef data fill:#ffccbc,stroke:#bf360c,stroke-width:2px
     
     class Router,Handler,ReqMapper,ResMapper,Validator,ExceptionHandler,RepoAdapter,EntityMapper,Repository,Entity,ExecutorConfig,AuditingConfig,JacksonConfig infrastructure
-    class CommandUseCase,QueryUseCase,CityService,GetCityUseCase,CreateCityCommand,GetCityQuery,PersistencePort application
+    class CommandUseCase,QueryUseCase,CreateCityCommandHandler,GetCityQueryHandler,CreateCityCommand,GetCityQuery,ServiceContract,CityServiceContract application
     class City,CityId,State,CityPolicy,CityPolicyEnforcer,CityNameSpec,DomainExceptions domain
     class Client external
     class Database data
@@ -158,15 +160,16 @@ graph TB
   - `QueryUseCase`: Interface for query operations (read)
   
 - **Services**:
-  - `CityService`: Implements business logic for city commands
-  - `GetCityUseCase`: Implements query logic for retrieving cities
+  - `CreateCityCommandHandler`: Implements business logic for city commands
+  - `GetCityQueryHandler`: Implements query logic for retrieving cities
   
 - **Commands & Queries**:
   - `CreateCityCommand`: Command object for creating cities
   - `GetCityQuery`: Query object for retrieving cities
   
 - **Ports Out (Outbound Ports)**:
-  - `CityPersistencePort`: Interface for persistence operations (abstraction over database)
+  - `ServiceContract`: Generic interface for persistence operations
+  - `CityServiceContract`: City-specific persistence port extending ServiceContract
 
 ### 4. Domain Layer (Core Business Logic)
 - **Entities**:
@@ -187,7 +190,7 @@ graph TB
   - Domain-specific exceptions for business rule violations
 
 ### 5. Infrastructure Layer - Persistence
-- **CityRepositoryAdapter**: Adapter implementing `CityPersistencePort`, translating domain operations to JPA operations
+- **CityRepositoryAdapter**: Adapter implementing `CityServiceContract`, translating domain operations to JPA operations
 - **Entity Mapper**: Maps between domain models (`City`) and persistence entities (`CityEntity`)
 - **CityRepository**: Spring Data JPA repository interface
 - **CityEntity**: JPA entity with database annotations
@@ -207,7 +210,7 @@ sequenceDiagram
     participant C as Client
     participant R as CityRouter
     participant H as CityHandler
-    participant S as CityService
+    participant S as CreateCityCommandHandler
     participant P as CityPolicy
     participant City as City Entity
     participant A as CityRepositoryAdapter
@@ -254,8 +257,8 @@ sequenceDiagram
     participant Handler as CityHandler
     participant Validator as Validator
     participant ReqMapper as Request Mapper
-    participant UseCase as GetCityUseCase
-    participant Persistence as CityPersistencePort
+    participant UseCase as GetCityQueryHandler
+    participant Persistence as CityServiceContract
     participant Adapter as CityRepositoryAdapter
     participant Repo as CityRepository (JPA)
     participant Entity as CityEntity
@@ -269,10 +272,10 @@ sequenceDiagram
         Handler-->>Client: 400 Bad Request / error payload
     else validation passes
         Handler->>ReqMapper: map path param -> GetCityQuery
-        Handler->>UseCase: execute(GetCityQuery)
-        UseCase->>Persistence: findById(id)
+        Handler->>UseCase: query(GetCityQuery)
+        UseCase->>Persistence: findByUid(id)
         Persistence->>Adapter: query database
-        Adapter->>Repo: jpa.findById(id)
+        Adapter->>Repo: jpa.findByUid(id)
         Repo-->>Adapter: CityEntity
         Adapter->>Entity: map CityEntity -> Domain City
         Adapter-->>Persistence: return Domain City
@@ -319,20 +322,20 @@ sequenceDiagram
 src/main/java/com/csio/hexagonal/
 ├── CityServiceApplication.java          # Main application entry point
 ├── application/                         # Application Layer
-│   ├── command/
-│   │   └── CreateCityCommand.java       # Command object
-│   ├── query/
-│   │   └── GetCityQuery.java            # Query object
 │   ├── port/
 │   │   ├── in/                          # Inbound ports
 │   │   │   ├── CommandUseCase.java
 │   │   │   └── QueryUseCase.java
 │   │   └── out/                         # Outbound ports
-│   │       ├── CityPersistencePort.java
-│   │       └── ServiceContract.java
+│   │       ├── ServiceContract.java
+│   │       └── CityServiceContract.java
 │   └── service/
-│       ├── CityService.java             # Command use case implementation
-│       └── GetCityUseCase.java          # Query use case implementation
+│       ├── command/
+│       │   ├── CreateCityCommand.java       # Command object
+│       │   └── CreateCityCommandHandler.java # Command handler
+│       └── query/
+│           ├── GetCityQuery.java            # Query object
+│           └── GetCityQueryHandler.java     # Query handler
 ├── domain/                              # Domain Layer
 │   ├── exception/
 │   │   ├── DuplicateCityException.java
@@ -391,7 +394,7 @@ src/main/java/com/csio/hexagonal/
         │   └── contract/Activatable.java
         ├── mapper/
         │   └── CityMapper.java            # Entity mapper
-        ├── out/adapter/
+        ├── adapter/
         │   └── CityRepositoryAdapter.java # Persistence adapter
         └── repo/
             └── CityRepository.java        # JPA repository

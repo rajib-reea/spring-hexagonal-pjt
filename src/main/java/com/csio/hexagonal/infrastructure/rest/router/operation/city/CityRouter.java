@@ -16,7 +16,7 @@ public class CityRouter {
         return route()
                 .POST("/api/v1/city", handler::createCity,
                         ops -> ops.beanClass(CityHandler.class).beanMethod("createCity"))
-                .GET("/api/v1/city/all", handler::getAllCity,
+                .POST("/api/v1/city/all", handler::getAllCity,
                         ops -> ops.beanClass(CityHandler.class).beanMethod("getAllCity"))
                 .GET("/api/v1/city/{uid}", handler::getCity,
                         ops -> ops.beanClass(CityHandler.class).beanMethod("getCity"))

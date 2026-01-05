@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 @Schema(description = "Request body for creating a city")
-public record CreateCityRequest(
+public record CityCreateRequest(
 
     @NotBlank(message = "City name is required")
     @Size(max = 100, message = "City name must not exceed 100 characters")

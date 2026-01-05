@@ -189,69 +189,69 @@ public class CityRepositoryAdapter implements CityServiceContract {
     //     return sb.toString();
     // }
     @Override
-public List<City> findAllWithFilters(CityFindAllRequest request, String token) {
-    try {
-        // Delegate to pagination if no filters
-        if (request.filterGroups() == null || request.filterGroups().isEmpty()) {
-            log.info("No filters provided, delegating to findAllWithPagination");
-            return findAllWithPagination(
-                    request.page(),
-                    request.size(),
-                    request.search(),
-                    buildSortString(request.sort()),
-                    token
-            );
-        }
-
-        // Fetch all entities
-        List<CityEntity> entities = repo.findAll();
-
-        // Apply filters in memory
-        List<CityEntity> filtered = entities.stream()
-                .filter(entity -> request.filterGroups().stream().allMatch(group ->
-                        evaluateGroup(entity, group)
-                ))
-                .toList();
-
-        // Map to domain model
-        return filtered.stream().map(CityMapper::toModel).toList();
-
-    } catch (DataAccessException ex) {
-        log.error("Database error while fetching cities with filters", ex);
-        throw new DatabaseException("Failed to fetch filtered cities", ex);
-    }
-}
-
-// Evaluate one group (AND/OR logic)
-private static boolean evaluateGroup(CityEntity entity, CityFindAllRequest.FilterGroup group) {
-    if (group.operator() == CityFindAllRequest.LogicalOperator.AND) {
-        return group.conditions().stream().allMatch(cond -> isConditionResult(entity, cond));
-    } else { // OR
-        return group.conditions().stream().anyMatch(cond -> isConditionResult(entity, cond));
-    }
-}
-
-// Existing condition checker
-private static boolean isConditionResult(CityEntity entity, CityFindAllRequest.FilterCondition condition) {
-    return switch (condition.field()) {
-        case "state" -> entity.getState().equalsIgnoreCase(condition.value());
-        case "active" -> entity.getIsActive().toString().equalsIgnoreCase(condition.value());
-        case "name" -> {
-            if (condition.operator() == CityFindAllRequest.Operator.LIKE) {
-                yield entity.getName().toLowerCase().contains(condition.value().toLowerCase());
-            } else { // EQUALS
-                yield entity.getName().equalsIgnoreCase(condition.value());
+    public List<City> findAllWithFilters(CityFindAllRequest request, String token) {
+        try {
+            // Delegate to pagination if no filters
+            if (request.filterGroups() == null || request.filterGroups().isEmpty()) {
+                log.info("No filters provided, delegating to findAllWithPagination");
+                return findAllWithPagination(
+                        request.page(),
+                        request.size(),
+                        request.search(),
+                        buildSortString(request.sort()),
+                        token
+                );
             }
-        }
-        default -> true;
-    };
-}
 
-// Build sort string for pagination
-private String buildSortString(List<CityFindAllRequest.SortOrder> sortOrders) {
-    return (sortOrders == null || sortOrders.isEmpty())
-            ? "name,asc"
-            : sortOrders.get(0).field() + "," + sortOrders.get(0).direction().name().toLowerCase();
-}
+            // Fetch all entities
+            List<CityEntity> entities = repo.findAll();
+
+            // Apply filters in memory
+            List<CityEntity> filtered = entities.stream()
+                    .filter(entity -> request.filterGroups().stream().allMatch(group ->
+                            evaluateGroup(entity, group)
+                    ))
+                    .toList();
+
+            // Map to domain model
+            return filtered.stream().map(CityMapper::toModel).toList();
+
+        } catch (DataAccessException ex) {
+            log.error("Database error while fetching cities with filters", ex);
+            throw new DatabaseException("Failed to fetch filtered cities", ex);
+        }
+    }
+
+    // Evaluate one group (AND/OR logic)
+    private static boolean evaluateGroup(CityEntity entity, CityFindAllRequest.FilterGroup group) {
+        if (group.operator() == CityFindAllRequest.LogicalOperator.AND) {
+            return group.conditions().stream().allMatch(cond -> isConditionResult(entity, cond));
+        } else { // OR
+            return group.conditions().stream().anyMatch(cond -> isConditionResult(entity, cond));
+        }
+    }
+
+    // Existing condition checker
+    private static boolean isConditionResult(CityEntity entity, CityFindAllRequest.FilterCondition condition) {
+        return switch (condition.field()) {
+            case "state" -> entity.getState().equalsIgnoreCase(condition.value());
+            case "active" -> entity.getIsActive().toString().equalsIgnoreCase(condition.value());
+            case "name" -> {
+                if (condition.operator() == CityFindAllRequest.Operator.LIKE) {
+                    yield entity.getName().toLowerCase().contains(condition.value().toLowerCase());
+                } else { // EQUALS
+                    yield entity.getName().equalsIgnoreCase(condition.value());
+                }
+            }
+            default -> true;
+        };
+    }
+
+    // Build sort string for pagination
+    private String buildSortString(List<CityFindAllRequest.SortOrder> sortOrders) {
+        return (sortOrders == null || sortOrders.isEmpty())
+                ? "name,asc"
+                : sortOrders.get(0).field() + "," + sortOrders.get(0).direction().name().toLowerCase();
+    }
 
 }

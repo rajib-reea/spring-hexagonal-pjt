@@ -54,45 +54,46 @@ public class CitySpec {
             "An example of a successful city creation request";
 
     public static final String CREATE_EXAMPLE_VALUE = """
-        {
-            "name": "San Francisco",
-            "state": "California"
-        }
-        """;
+            {
+                "name": "San Francisco",
+                "state": "California"
+            }
+            """;
 
     public static final String UPDATE_EXAMPLE_VALUE = """
-        {
-            "name": "Los Angeles",
-            "state": "California"
-        }
-        """;
+            {
+                "name": "Los Angeles",
+                "state": "California"
+            }
+            """;
     public static final String GET_ALL_EXAMPLE_NAME =
             "Get All City Example";
-        public static final String GET_ALL_EXAMPLE_VALUE = """
-        {
-          "operator": "OR",
-          "filterGroups": [
+    public static final String GET_ALL_EXAMPLE_VALUE = """
             {
-              "operator": "AND",
-              "conditions": [
-                { "field": "state", "operator": "EQUALS", "value": "California" },
-                { "field": "active", "operator": "EQUALS", "value": "true" }
-              ]
-            },
-            {
+              "search": "San",
               "operator": "OR",
-              "conditions": [
-                { "field": "name", "operator": "LIKE", "value": "San" },
-                { "field": "name", "operator": "LIKE", "value": "Los" }
+              "filterGroups": [
+                {
+                  "operator": "AND",
+                  "conditions": [
+                    { "field": "state", "operator": "EQUALS", "value": "California" },
+                    { "field": "active", "operator": "EQUALS", "value": "true" }
+                  ]
+                },
+                {
+                  "operator": "OR",
+                  "conditions": [
+                    { "field": "name", "operator": "LIKE", "value": "San" },
+                    { "field": "name", "operator": "LIKE", "value": "Los" }
+                  ]
+                }
+              ],
+              "page": 1,
+              "size": 20,
+              "sort": [
+                { "field": "name", "direction": "ASC" },
+                { "field": "state", "direction": "DESC" }
               ]
             }
-          ],
-          "page": 1,
-          "size": 20,
-          "sort": [
-            { "field": "name", "direction": "ASC" },
-            { "field": "state", "direction": "DESC" }
-          ]
-        }
-        """;
+            """;
 }

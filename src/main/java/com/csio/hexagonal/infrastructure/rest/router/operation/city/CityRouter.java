@@ -16,10 +16,10 @@ public class CityRouter {
         return route()
                 .POST("/api/v1/city", handler::createCity,
                         ops -> ops.beanClass(CityHandler.class).beanMethod("createCity"))
+                .GET("/api/v1/city/all", handler::getAllCity,
+                        ops -> ops.beanClass(CityHandler.class).beanMethod("getAllCity"))
                 .GET("/api/v1/city/{uid}", handler::getCity,
                         ops -> ops.beanClass(CityHandler.class).beanMethod("getCity"))
-                 .POST("/api/v1/city/all", handler::getAllCity,
-                         ops -> ops.beanClass(CityHandler.class).beanMethod("getAllCity"))
                 // .PUT("/api/v1/city/{uid}", handler::updateCity,
                 //         ops -> ops.beanClass(CityHandler.class).beanMethod("updateCity"))
                 // .DELETE("/api/v1/city/{uid}", handler::deleteCity,

@@ -86,8 +86,9 @@ public class GetAllCityQueryHandler
                 request.filterGroups() != null && !request.filterGroups().isEmpty();
 
         log.info(
-                "Fetching cities | hasFilters={} | page={} | size={} | sort={}",
+                "Fetching cities | hasFilters={} | search={} | page={} | size={} | sort={}",
                 hasFilters,
+                request.search(),
                 request.page(),
                 request.size(),
                 request.sort()
@@ -103,7 +104,7 @@ public class GetAllCityQueryHandler
                     return cityServiceContract.findAllWithPagination(
                             request.page() - 1,          // 1-based → 0-based
                             request.size(),
-                            null,                         // search handled separately
+                            request.search(),                         // search handled separately
                             buildSortString(request),
                             token
                     );

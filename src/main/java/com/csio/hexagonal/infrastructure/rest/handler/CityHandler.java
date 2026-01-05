@@ -330,14 +330,18 @@ public class CityHandler {
     public Mono<ServerResponse> getAllCity(ServerRequest request) {
         String token = request.headers().firstHeader("Authorization");
 
-        int page = request.queryParam("page").map(Integer::parseInt).orElse(0);
+        int page = request.queryParam("page").map(Integer::parseInt).orElse(1);
+        if (page < 1) {
+            throw new IllegalArgumentException("Page must be >= 1");
+        }
+
         int size = request.queryParam("size").map(Integer::parseInt).orElse(20);
         String search = request.queryParam("search").orElse("");
         String sort = request.queryParam("sort").orElse("name,asc");
 
         log.info("Received getAllCity request: page={}, size={}, search={}, sort={}", page, size, search, sort);
 
-        GetAllCityQuery query = GetAllCityQuery.fromRequest(page, size, search, sort);
+        GetAllCityQuery query = GetAllCityQuery.fromRequest(page-1, size, search, sort);
 
         return getAllCityUseCase.query(query, token)
                 .subscribeOn(Schedulers.fromExecutor(virtualExecutor))

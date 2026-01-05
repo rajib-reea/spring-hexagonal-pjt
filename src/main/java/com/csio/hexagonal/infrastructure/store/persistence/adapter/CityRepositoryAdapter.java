@@ -129,7 +129,7 @@ public class CityRepositoryAdapter implements CityServiceContract {
 
             if (page >= result.getTotalPages()) {
                 throw new IllegalArgumentException(
-                        String.format("Requested page %d exceeds total pages %d", page, result.getTotalPages())
+                        String.format("Requested page %d exceeds total pages %d", page+1, result.getTotalPages())
                 );
             }
             return result.stream().map(CityMapper::toModel).toList();

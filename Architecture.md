@@ -13,9 +13,11 @@ graph TB
     subgraph "Infrastructure Layer - REST"
         Router[CityRouter<br/>Route Configuration]
         Handler[CityHandler<br/>HTTP Handler]
+        RequestDTO[Request Objects<br/>CityCreateRequest<br/>CityFindAllRequest]
         ResponseHelper[ResponseHelper<br/>Response Wrapper Utility]
         Validator[Validator]
         ExceptionHandler[Global Exception Handler]
+        APISpec[CitySpec<br/>OpenAPI Specification]
     end
 
     subgraph "Application Layer"
@@ -71,12 +73,14 @@ graph TB
         EntityMapper[Entity Mapper]
         Repository[CityRepository<br/>JPA Repository]
         Entity[CityEntity<br/>JPA Entity]
+        PersistenceExceptions[DatabaseException]
     end
 
     subgraph "Infrastructure Layer - Configuration"
         ExecutorConfig[Executor Configuration<br/>VirtualThreadExecutor<br/>CPUExecutor]
         AuditingConfig[Auditing Configuration]
         JacksonConfig[Jackson Configuration]
+        APIDocConfig[API Documentation<br/>CityGroup<br/>GroupedOpenApiProvider]
     end
 
     subgraph "Data Store"
@@ -86,7 +90,9 @@ graph TB
     %% Client to Infrastructure REST
     Client -->|HTTP Request| Router
     Router -->|Route to Handler| Handler
+    Handler -->|Maps from| RequestDTO
     Handler -->|Validate| Validator
+    APISpec -.->|Defines specs for| Handler
     
     %% Infrastructure REST to Application
     Handler -->|Command| CreateCityCommandHandler
@@ -120,6 +126,7 @@ graph TB
     RepoAdapter -.->|implements| CityServiceContract
     RepoAdapter -->|maps| EntityMapper
     RepoAdapter -->|uses| Repository
+    RepoAdapter -.->|throws| PersistenceExceptions
     Repository -->|persists| Entity
     Entity -->|stores in| Database
     
@@ -127,6 +134,7 @@ graph TB
     ExecutorConfig -.->|provides executors to| Handler
     ExecutorConfig -.->|provides executors to| CreateCityCommandHandler
     AuditingConfig -.->|audits| Entity
+    APIDocConfig -.->|configures| Router
     
     %% Response Path
     Handler -->|Success/Error Response| Router
@@ -139,7 +147,7 @@ graph TB
     classDef external fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
     classDef data fill:#ffccbc,stroke:#bf360c,stroke-width:2px
     
-    class Router,Handler,ResponseHelper,Validator,ExceptionHandler,RepoAdapter,EntityMapper,Repository,Entity,ExecutorConfig,AuditingConfig,JacksonConfig infrastructure
+    class Router,Handler,RequestDTO,ResponseHelper,Validator,ExceptionHandler,APISpec,RepoAdapter,EntityMapper,Repository,Entity,PersistenceExceptions,ExecutorConfig,AuditingConfig,JacksonConfig,APIDocConfig infrastructure
     class CommandUseCase,QueryUseCase,CreateCityCommandHandler,GetCityQueryHandler,GetAllCityQueryHandler,CreateCityCommand,GetCityQuery,GetAllCityQuery,ServiceContract,CityServiceContract application
     class City,CityId,State,CityPolicy,CityPolicyEnforcer,CityNameSpec,DomainExceptions domain
     class Client external
@@ -154,9 +162,13 @@ graph TB
 ### 2. Infrastructure Layer - REST
 - **CityRouter**: Routes HTTP requests to appropriate handlers using Spring WebFlux functional routing
 - **CityHandler**: Handles HTTP requests, validates input, and orchestrates use cases. Maps requests inline to commands/queries
+- **Request Objects**:
+  - `CityCreateRequest`: Request DTO for creating cities with validation annotations
+  - `CityFindAllRequest`: Request DTO for filtering and paginating city queries with support for complex filtering, sorting, and searching
 - **ResponseHelper**: Utility class for wrapping responses in SuccessResponseWrapper
 - **Validator**: Validates incoming request data
 - **Global Exception Handler**: Centralized error handling and response formatting
+- **CitySpec**: OpenAPI specification constants for API documentation, including summaries, descriptions, and examples
 - **Note**: CityMapper exists in the codebase but is currently unused; mapping is done inline in handlers and use cases
 
 ### 3. Application Layer
@@ -201,11 +213,15 @@ graph TB
 - **Entity Mapper**: Maps between domain models (`City`) and persistence entities (`CityEntity`)
 - **CityRepository**: Spring Data JPA repository interface
 - **CityEntity**: JPA entity with database annotations
+- **DatabaseException**: Custom exception for database-related errors
 
 ### 6. Infrastructure Layer - Configuration
 - **Executor Configuration**: Configures thread executors (virtual threads for I/O, platform threads for CPU)
 - **Auditing Configuration**: Configures JPA auditing for created/modified timestamps
 - **Jackson Configuration**: Configures JSON serialization/deserialization
+- **API Documentation Configuration**:
+  - `CityGroup`: Configures grouped OpenAPI documentation for City endpoints
+  - `GroupedOpenApiProvider`: Interface for creating customized OpenAPI groups with common headers (Authorization, Accept-Language, Currency) and response codes
 
 ### 7. Data Store
 - **H2 Database**: In-memory database for development and testing
@@ -217,6 +233,7 @@ sequenceDiagram
     participant C as Client
     participant R as CityRouter
     participant H as CityHandler
+    participant Req as CityCreateRequest
     participant S as CreateCityCommandHandler
     participant P as CityPolicy
     participant City as City Entity
@@ -227,6 +244,8 @@ sequenceDiagram
 
     C->>R: POST /api/v1/city
     R->>H: createCity(request)
+    H->>Req: bodyToMono(CityCreateRequest.class)
+    Req-->>H: CityCreateRequest
     H->>H: Validate & Map to CreateCityCommand
     H->>S: create(command, token)
     S->>City: new City(id, name, state)
@@ -302,13 +321,14 @@ sequenceDiagram
 
 ## GetAllCity Flow Diagram
 
-The diagram below shows the detailed runtime flow for the "getAllCity" query (GET /api/v1/city/all). This endpoint supports pagination, sorting, and searching capabilities. It demonstrates how query parameters are processed, how pagination is handled, and how the response is built and returned to the client.
+The diagram below shows the detailed runtime flow for the "getAllCity" query (POST /api/v1/city/all). This endpoint supports pagination, sorting, and searching capabilities with complex filtering logic passed in the request body. Note: This endpoint uses POST instead of GET to support complex filtering operations that require a request body.
 
 ```mermaid
 sequenceDiagram
     participant Client as Client/Swagger UI
     participant Router as CityRouter
     participant Handler as CityHandler
+    participant Req as CityFindAllRequest
     participant UseCase as GetAllCityQueryHandler
     participant Persistence as CityServiceContract
     participant Adapter as CityRepositoryAdapter
@@ -316,14 +336,15 @@ sequenceDiagram
     participant DB as Database
     participant Helper as ResponseHelper
 
-    Client->>Router: GET /api/v1/city/all?page=1&size=20&search=&sort=name,asc
+    Client->>Router: POST /api/v1/city/all
     Router->>Handler: route to CityHandler.getAllCity(request)
-    Handler->>Handler: Extract query params (page, size, search, sort)
-    Handler->>Handler: Validate page >= 1
+    Handler->>Req: bodyToMono(CityFindAllRequest.class)
+    Req-->>Handler: CityFindAllRequest (with filters, sort, pagination)
+    Handler->>Handler: Extract and validate request parameters
     alt page < 1
         Handler-->>Client: 400 Bad Request (IllegalArgumentException)
     else page valid
-        Handler->>Handler: Create GetAllCityQuery(page-1, size, search, sort)
+        Handler->>Handler: Create GetAllCityQuery from request
         Handler->>UseCase: query(GetAllCityQuery, token)
         Note over UseCase: Executes on virtual thread executor
         UseCase->>Persistence: findAllWithPagination(page, size, search, sort, token)
@@ -357,6 +378,7 @@ sequenceDiagram
 
     note right of Handler: Any uncaught exceptions are handled by the Global Exception Handler
     note right of Adapter: Supports case-insensitive search on name and state fields
+    note right of Req: CityFindAllRequest supports complex filtering with logical operators (AND/OR)
 ```
 
 ## Key Architectural Principles
@@ -443,7 +465,8 @@ src/main/java/com/csio/hexagonal/
     │   ├── mapper/
     │   │   └── CityMapper.java           # Mapper (currently unused)
     │   ├── request/
-    │   │   └── CreateCityRequest.java
+    │   │   ├── CityCreateRequest.java    # Create city request DTO
+    │   │   └── CityFindAllRequest.java   # Find all cities request DTO with filtering
     │   ├── response/
     │   │   ├── city/CityResponse.java
     │   │   ├── ResponseInclusion.java
@@ -454,12 +477,12 @@ src/main/java/com/csio/hexagonal/
     │   │       └── SuccessResponseWrapper.java
     │   ├── router/
     │   │   ├── group/
-    │   │   │   ├── CityGroup.java
-    │   │   │   └── contract/GroupedOpenApiProvider.java
+    │   │   │   ├── CityGroup.java        # OpenAPI group configuration
+    │   │   │   └── contract/GroupedOpenApiProvider.java  # OpenAPI customization interface
     │   │   └── operation/city/
     │   │       └── CityRouter.java       # Route configuration
     │   ├── spec/
-    │   │   └── CitySpec.java             # OpenAPI spec
+    │   │   └── CitySpec.java             # OpenAPI specification constants
     │   └── validator/
     │       └── Validator.java
     └── store/persistence/
@@ -467,6 +490,8 @@ src/main/java/com/csio/hexagonal/
         │   ├── AuditableEntity.java
         │   ├── CityEntity.java           # JPA entity
         │   └── contract/Activatable.java
+        ├── exception/
+        │   └── DatabaseException.java    # Database exception
         ├── mapper/
         │   └── CityMapper.java            # Entity mapper (domain <-> JPA)
         └── adapter/

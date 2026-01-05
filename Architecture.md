@@ -321,7 +321,7 @@ sequenceDiagram
 
 ## GetAllCity Flow Diagram
 
-The diagram below shows the detailed runtime flow for the "getAllCity" query (GET /api/v1/city/all). This endpoint supports pagination, sorting, and searching capabilities. It demonstrates how query parameters are processed, how pagination is handled, and how the response is built and returned to the client.
+The diagram below shows the detailed runtime flow for the "getAllCity" query (POST /api/v1/city/all). This endpoint supports pagination, sorting, and searching capabilities with complex filtering logic passed in the request body. Note: This endpoint uses POST instead of GET to support complex filtering operations that require a request body.
 
 ```mermaid
 sequenceDiagram

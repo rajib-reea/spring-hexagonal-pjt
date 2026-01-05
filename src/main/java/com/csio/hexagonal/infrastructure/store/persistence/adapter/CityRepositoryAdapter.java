@@ -127,6 +127,10 @@ public class CityRepositoryAdapter implements CityServiceContract {
             log.info("Result of pagination: page {} of {} with total elements {}",
                     result.getNumber(), result.getTotalPages(), result.getTotalElements());
 
+            // If there are no results, always return empty list
+            if (result.getTotalPages() == 0) {
+                return List.of(); // no exception
+            }
             if (page >= result.getTotalPages()) {
                 throw new IllegalArgumentException(
                         String.format("Requested page %d exceeds total pages %d", page+1, result.getTotalPages())

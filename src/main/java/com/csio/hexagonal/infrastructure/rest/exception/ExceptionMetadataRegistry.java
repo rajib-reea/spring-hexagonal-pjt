@@ -15,7 +15,7 @@ public final class ExceptionMetadataRegistry {
         registry.put(DuplicateCityException.class, new ExceptionMetadata(HttpStatus.BAD_REQUEST, "Duplicate City Error"));
         registry.put(InvalidCityNameException.class, new ExceptionMetadata(HttpStatus.BAD_REQUEST, "Validation Error"));
         registry.put(ServerWebInputException.class, new ExceptionMetadata(HttpStatus.BAD_REQUEST, "Invalid Input"));
-        // add more exceptions here
+        registry.put(IllegalArgumentException.class, new ExceptionMetadata(HttpStatus.BAD_REQUEST, "Invalid Parameter")); // ✅ add this
     }
 
     public static ExceptionMetadata getMetadata(Throwable ex) {

@@ -8,6 +8,7 @@ import java.util.UUID;
 public record GetCityQuery(UUID uid) {
 
     public static GetCityQuery fromString(String uid) {
+
         return new GetCityQuery(UUID.fromString(uid));
     }
 }

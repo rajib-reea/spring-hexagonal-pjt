@@ -17,14 +17,14 @@ import java.util.concurrent.Executor;
 public class GetCityQueryHandler implements QueryUseCase<GetCityQuery, CityResponse> {
     private static final Logger log = LoggerFactory.getLogger(GetCityQueryHandler.class);
 
-    private final CityServiceContract cityPersistencePort;
+    private final CityServiceContract cityServiceContract;
     private final Executor virtualExecutor;
 
     public GetCityQueryHandler(
-            CityServiceContract cityPersistencePort,
+            CityServiceContract cityServiceContract,
             Executor virtualExecutor
     ) {
-        this.cityPersistencePort = cityPersistencePort;
+        this.cityServiceContract = cityServiceContract;
         this.virtualExecutor = virtualExecutor;
     }
 
@@ -34,7 +34,7 @@ public class GetCityQueryHandler implements QueryUseCase<GetCityQuery, CityRespo
         // Convert UUID from query to CityId value object
         CityId cityId = new CityId(query.uid());
         log.info("Received CityId  for cityId={}", cityId);
-        return Mono.fromCallable(() -> cityPersistencePort.findByUid(UUID.fromString(String.valueOf(cityId.value())), token))
+        return Mono.fromCallable(() -> cityServiceContract.findByUid(UUID.fromString(String.valueOf(cityId.value())), token))
                 .subscribeOn(Schedulers.fromExecutor(virtualExecutor))
                 .flatMap(Mono::justOrEmpty) // unwrap Optional<City>
                 .map(city -> new CityResponse(

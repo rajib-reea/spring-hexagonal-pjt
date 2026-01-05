@@ -166,12 +166,12 @@ graph TB
   
 - **Services**:
   - `CreateCityCommandHandler`: Implements business logic for city commands
-  - `GetCityQueryHandler`: Implements query logic for retrieving a single city by ID
+  - `GetCityQueryHandler`: Implements query logic for retrieving a single city by its unique identifier (UUID)
   - `GetAllCityQueryHandler`: Implements query logic for retrieving multiple cities with pagination, sorting, and search
   
 - **Commands & Queries**:
   - `CreateCityCommand`: Command object for creating cities
-  - `GetCityQuery`: Query object for retrieving a single city
+  - `GetCityQuery`: Query object for retrieving a single city by ID
   - `GetAllCityQuery`: Query object for retrieving multiple cities with pagination parameters
   
 - **Ports Out (Outbound Ports)**:

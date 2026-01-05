@@ -4,11 +4,20 @@ import com.csio.hexagonal.infrastructure.store.persistence.entity.CityEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.Optional;
 
 public interface CityRepository extends JpaRepository<CityEntity, String> {
     //this method exists as there is no method for uid defined in jpa repository
     Optional<CityEntity> findByUid(String uid);
-    Page<CityEntity> findByNameOrState(String name, String state, Pageable pageable);
+
+    @Query("""
+    SELECT c FROM CityEntity c 
+    WHERE LOWER(c.name) LIKE LOWER(CONCAT('%', :search, '%')) 
+       OR LOWER(c.state) LIKE LOWER(CONCAT('%', :search, '%'))
+""")
+    Page<CityEntity> findByNameOrState(@Param("search") String search, Pageable pageable);
+
 }

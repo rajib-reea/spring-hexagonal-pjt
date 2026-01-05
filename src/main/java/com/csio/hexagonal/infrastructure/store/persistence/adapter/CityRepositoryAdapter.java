@@ -122,7 +122,7 @@ public class CityRepositoryAdapter implements CityServiceContract {
             if (search == null || search.isBlank()) {
                 result = repo.findAll(pageable);
             } else {
-                result = repo.findByNameOrState(search, search, pageable);
+                result = repo.findByNameOrState(search, pageable);
             }
             log.info("Result of pagination: page {} of {} with total elements {}",
                     result.getNumber(), result.getTotalPages(), result.getTotalElements());

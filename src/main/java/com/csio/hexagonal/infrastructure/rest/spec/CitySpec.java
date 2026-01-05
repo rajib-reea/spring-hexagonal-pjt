@@ -116,4 +116,33 @@ public class CitySpec {
             "state": "California"
         }
         """;
+    public static final String GET_ALL_EXAMPLE_NAME =
+            "Get All City Example";
+        public static final String GET_ALL_EXAMPLE_VALUE = """
+        {
+          "operator": "OR",
+          "filterGroups": [
+            {
+              "operator": "AND",
+              "conditions": [
+                { "field": "state", "operator": "EQUALS", "value": "California" },
+                { "field": "active", "operator": "EQUALS", "value": "true" }
+              ]
+            },
+            {
+              "operator": "OR",
+              "conditions": [
+                { "field": "name", "operator": "LIKE", "value": "San" },
+                { "field": "name", "operator": "LIKE", "value": "Los" }
+              ]
+            }
+          ],
+          "page": 1,
+          "size": 20,
+          "sort": [
+            { "field": "name", "direction": "ASC" },
+            { "field": "state", "direction": "DESC" }
+          ]
+        }
+        """;
 }

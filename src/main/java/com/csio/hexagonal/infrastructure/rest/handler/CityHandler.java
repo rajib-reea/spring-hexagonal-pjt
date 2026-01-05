@@ -186,8 +186,9 @@ import com.csio.hexagonal.application.port.in.QueryUseCase;
 import com.csio.hexagonal.application.service.command.CreateCityCommand;
 import com.csio.hexagonal.application.service.query.GetAllCityQuery;
 import com.csio.hexagonal.application.service.query.GetCityQuery;
+import com.csio.hexagonal.infrastructure.rest.request.CityFindAllRequest;
 import com.csio.hexagonal.infrastructure.rest.response.helper.ResponseHelper;
-import com.csio.hexagonal.infrastructure.rest.request.CreateCityRequest;
+import com.csio.hexagonal.infrastructure.rest.request.CityCreateRequest;
 import com.csio.hexagonal.infrastructure.rest.response.city.CityResponse;
 import com.csio.hexagonal.infrastructure.rest.spec.CitySpec;
 import io.swagger.v3.oas.annotations.Operation;
@@ -218,13 +219,13 @@ public class CityHandler {
 
     private final CommandUseCase<CreateCityCommand, CityResponse> commandUseCase;
     private final QueryUseCase<GetCityQuery, CityResponse> getCityUseCase;
-    private final QueryUseCase<GetAllCityQuery, List<CityResponse>> getAllCityUseCase;
+    private final QueryUseCase<CityFindAllRequest, List<CityResponse>> getAllCityUseCase;
     private final Executor virtualExecutor;
 
     public CityHandler(
             CommandUseCase<CreateCityCommand, CityResponse> commandUseCase,
             QueryUseCase<GetCityQuery, CityResponse> getCityUseCase,
-            QueryUseCase<GetAllCityQuery, List<CityResponse>> getAllCityUseCase,
+            QueryUseCase<CityFindAllRequest, List<CityResponse>> getAllCityUseCase,
             @Qualifier("virtualExecutor") Executor virtualExecutor
     ) {
         this.commandUseCase = commandUseCase;
@@ -243,7 +244,7 @@ public class CityHandler {
             required = true,
             content = @Content(
                     mediaType = "application/json",
-                    schema = @Schema(implementation = CreateCityRequest.class),
+                    schema = @Schema(implementation = CityCreateRequest.class),
                     examples = @ExampleObject(
                             name = CitySpec.CREATE_EXAMPLE_NAME,
                             value = CitySpec.CREATE_EXAMPLE_VALUE,
@@ -254,7 +255,7 @@ public class CityHandler {
     public Mono<ServerResponse> createCity(ServerRequest request) {
         String token = request.headers().firstHeader("Authorization");
 
-        return request.bodyToMono(CreateCityRequest.class)
+        return request.bodyToMono(CityCreateRequest.class)
                 .doOnNext(req -> log.info("Received CreateCityRequest: {}", req))
                 .map(req -> new CreateCityCommand(req.name(), req.state()))
                 .doOnNext(cmd -> log.info("Mapped to CreateCityCommand: {}", cmd))
@@ -296,58 +297,39 @@ public class CityHandler {
                         .bodyValue(wrapper));
     }
 
-    /* ================= GET ALL CITIES ================= */
+    /* ================= FIND ALL CITIES ================= */
+
     @Operation(
             summary = CitySpec.GET_ALL_SUMMARY,
             description = CitySpec.GET_ALL_DESCRIPTION,
-            parameters = {
-                    @Parameter(
-                            name = "page",
-                            in = ParameterIn.QUERY,
-                            required = false,
-                            description = CitySpec.PAGE_PARAM_DESCRIPTION
-                    ),
-                    @Parameter(
-                            name = "size",
-                            in = ParameterIn.QUERY,
-                            required = false,
-                            description = CitySpec.SIZE_PARAM_DESCRIPTION
-                    ),
-                    @Parameter(
-                            name = "search",
-                            in = ParameterIn.QUERY,
-                            required = false,
-                            description = CitySpec.SEARCH_PARAM_DESCRIPTION
-                    ),
-                    @Parameter(
-                            name = "sort",
-                            in = ParameterIn.QUERY,
-                            required = false,
-                            description = CitySpec.SORT_PARAM_DESCRIPTION
+            requestBody = @RequestBody(
+                    description = "Request body for filtering, sorting, and paginating cities",
+                    required = true,
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = CityFindAllRequest.class),
+                            examples = @ExampleObject(
+                                    name = CitySpec.GET_ALL_EXAMPLE_NAME,
+                                    value = CitySpec.GET_ALL_EXAMPLE_VALUE, 
+                                    description = CitySpec.GET_ALL_DESCRIPTION
+                            )
                     )
-            }
+            )
     )
     public Mono<ServerResponse> getAllCity(ServerRequest request) {
         String token = request.headers().firstHeader("Authorization");
 
-        int page = request.queryParam("page").map(Integer::parseInt).orElse(1);
-        if (page < 1) {
-            throw new IllegalArgumentException("Page must be >= 1");
-        }
-
-        int size = request.queryParam("size").map(Integer::parseInt).orElse(20);
-        String search = request.queryParam("search").orElse("");
-        String sort = request.queryParam("sort").orElse("name,asc");
-
-        log.info("Received getAllCity request: page={}, size={}, search={}, sort={}", page, size, search, sort);
-
-        GetAllCityQuery query = GetAllCityQuery.fromRequest(page-1, size, search, sort);
-
-        return getAllCityUseCase.query(query, token)
-                .subscribeOn(Schedulers.fromExecutor(virtualExecutor))
-                .map(ResponseHelper::success)
-                .flatMap(wrapper -> ServerResponse.ok()
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .bodyValue(wrapper));
+        return request.bodyToMono(CityFindAllRequest.class)
+                .doOnNext(r -> log.info("Received getAllCity request: {}", r))
+                .flatMap(r -> getAllCityUseCase.query(r, token)
+                        .subscribeOn(Schedulers.fromExecutor(virtualExecutor))
+                        .map(ResponseHelper::success)
+                        .flatMap(wrapper -> ServerResponse.ok()
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .bodyValue(wrapper)
+                        )
+                );
     }
+
+
 }

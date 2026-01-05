@@ -27,11 +27,13 @@ graph TB
         subgraph "Services"
             CreateCityCommandHandler[CreateCityCommandHandler<br/>Command Handler]
             GetCityQueryHandler[GetCityQueryHandler<br/>Query Handler]
+            GetAllCityQueryHandler[GetAllCityQueryHandler<br/>Query Handler]
         end
         
         subgraph "Commands & Queries"
             CreateCityCommand[CreateCityCommand]
             GetCityQuery[GetCityQuery]
+            GetAllCityQuery[GetAllCityQuery]
         end
         
         subgraph "Ports Out"
@@ -89,16 +91,20 @@ graph TB
     %% Infrastructure REST to Application
     Handler -->|Command| CreateCityCommandHandler
     Handler -->|Query| GetCityQueryHandler
+    Handler -->|Query| GetAllCityQueryHandler
     Handler -->|Wrap Response| ResponseHelper
     Handler -.->|Error Handling| ExceptionHandler
     
     %% Application Layer Connections
     CreateCityCommandHandler -.->|implements| CommandUseCase
     GetCityQueryHandler -.->|implements| QueryUseCase
+    GetAllCityQueryHandler -.->|implements| QueryUseCase
     CreateCityCommandHandler -->|uses| CreateCityCommand
     GetCityQueryHandler -->|uses| GetCityQuery
+    GetAllCityQueryHandler -->|uses| GetAllCityQuery
     CreateCityCommandHandler -->|calls| CityServiceContract
     GetCityQueryHandler -->|calls| CityServiceContract
+    GetAllCityQueryHandler -->|calls| CityServiceContract
     CityServiceContract -.->|extends| ServiceContract
     
     %% Application to Domain
@@ -134,7 +140,7 @@ graph TB
     classDef data fill:#ffccbc,stroke:#bf360c,stroke-width:2px
     
     class Router,Handler,ResponseHelper,Validator,ExceptionHandler,RepoAdapter,EntityMapper,Repository,Entity,ExecutorConfig,AuditingConfig,JacksonConfig infrastructure
-    class CommandUseCase,QueryUseCase,CreateCityCommandHandler,GetCityQueryHandler,CreateCityCommand,GetCityQuery,ServiceContract,CityServiceContract application
+    class CommandUseCase,QueryUseCase,CreateCityCommandHandler,GetCityQueryHandler,GetAllCityQueryHandler,CreateCityCommand,GetCityQuery,GetAllCityQuery,ServiceContract,CityServiceContract application
     class City,CityId,State,CityPolicy,CityPolicyEnforcer,CityNameSpec,DomainExceptions domain
     class Client external
     class Database data
@@ -160,11 +166,13 @@ graph TB
   
 - **Services**:
   - `CreateCityCommandHandler`: Implements business logic for city commands
-  - `GetCityQueryHandler`: Implements query logic for retrieving cities
+  - `GetCityQueryHandler`: Implements query logic for retrieving a single city by ID
+  - `GetAllCityQueryHandler`: Implements query logic for retrieving multiple cities with pagination, sorting, and search
   
 - **Commands & Queries**:
   - `CreateCityCommand`: Command object for creating cities
-  - `GetCityQuery`: Query object for retrieving cities
+  - `GetCityQuery`: Query object for retrieving a single city
+  - `GetAllCityQuery`: Query object for retrieving multiple cities with pagination parameters
   
 - **Ports Out (Outbound Ports)**:
   - `ServiceContract`: Generic interface for persistence operations
@@ -292,6 +300,65 @@ sequenceDiagram
     note right of Handler: Any uncaught exceptions are handled by the Global Exception Handler
 ```
 
+## GetAllCity Flow Diagram
+
+The diagram below shows the detailed runtime flow for the "getAllCity" query (GET /api/v1/city/all). This endpoint supports pagination, sorting, and searching capabilities. It demonstrates how query parameters are processed, how pagination is handled, and how the response is built and returned to the client.
+
+```mermaid
+sequenceDiagram
+    participant Client as Client/Swagger UI
+    participant Router as CityRouter
+    participant Handler as CityHandler
+    participant UseCase as GetAllCityQueryHandler
+    participant Persistence as CityServiceContract
+    participant Adapter as CityRepositoryAdapter
+    participant Repo as CityRepository (JPA)
+    participant DB as Database
+    participant Helper as ResponseHelper
+
+    Client->>Router: GET /api/v1/city/all?page=1&size=20&search=&sort=name,asc
+    Router->>Handler: route to CityHandler.getAllCity(request)
+    Handler->>Handler: Extract query params (page, size, search, sort)
+    Handler->>Handler: Validate page >= 1
+    alt page < 1
+        Handler-->>Client: 400 Bad Request (IllegalArgumentException)
+    else page valid
+        Handler->>Handler: Create GetAllCityQuery(page-1, size, search, sort)
+        Handler->>UseCase: query(GetAllCityQuery, token)
+        Note over UseCase: Executes on virtual thread executor
+        UseCase->>Persistence: findAllWithPagination(page, size, search, sort, token)
+        Persistence->>Adapter: findAllWithPagination(page, size, search, sort, token)
+        Adapter->>Adapter: Parse sort parameter (field, direction)
+        Adapter->>Adapter: Create Pageable with Sort
+        alt search is empty
+            Adapter->>Repo: findAll(pageable)
+        else search has value
+            Adapter->>Repo: findByNameOrState(search, pageable)
+        end
+        Repo->>DB: SELECT with pagination, sorting & filtering
+        DB-->>Repo: Page<CityEntity>
+        Repo-->>Adapter: Page<CityEntity>
+        alt totalPages == 0
+            Adapter-->>Persistence: Empty List<City>
+        else page >= totalPages
+            Adapter-->>Handler: IllegalArgumentException (page exceeds total)
+            Handler-->>Client: 400 Bad Request
+        else valid page
+            Adapter->>Adapter: map List<CityEntity> -> List<City>
+            Adapter-->>Persistence: List<City>
+            Persistence-->>UseCase: List<City>
+            UseCase->>UseCase: map List<City> -> List<CityResponse>
+            UseCase-->>Handler: List<CityResponse>
+            Handler->>Helper: success(List<CityResponse>)
+            Helper-->>Handler: SuccessResponseWrapper
+            Handler-->>Client: 200 OK + SuccessResponseWrapper
+        end
+    end
+
+    note right of Handler: Any uncaught exceptions are handled by the Global Exception Handler
+    note right of Adapter: Supports case-insensitive search on name and state fields
+```
+
 ## Key Architectural Principles
 
 ### Hexagonal Architecture (Ports & Adapters)
@@ -340,7 +407,9 @@ src/main/java/com/csio/hexagonal/
 │       │   └── CreateCityCommandHandler.java # Command handler
 │       └── query/
 │           ├── GetCityQuery.java            # Query object
-│           └── GetCityQueryHandler.java     # Query handler
+│           ├── GetCityQueryHandler.java     # Query handler
+│           ├── GetAllCityQuery.java         # Query object
+│           └── GetAllCityQueryHandler.java  # Query handler
 ├── domain/                              # Domain Layer
 │   ├── exception/
 │   │   ├── DuplicateCityException.java

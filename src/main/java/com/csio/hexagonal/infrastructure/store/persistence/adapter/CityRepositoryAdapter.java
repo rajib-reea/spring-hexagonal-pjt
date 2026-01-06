@@ -10,10 +10,7 @@ import com.csio.hexagonal.infrastructure.store.persistence.specification.CitySpe
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.*;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Repository;
 
@@ -109,12 +106,6 @@ public class CityRepositoryAdapter implements CityServiceContract {
                     ? repo.findAll(pageable)
                     : repo.findByNameOrState(search, pageable);
 
-            if (result.getTotalPages() == 0) return List.of();
-            if (page >= result.getTotalPages())
-                throw new IllegalArgumentException(
-                        String.format("Requested page %d exceeds total pages %d", page + 1, result.getTotalPages())
-                );
-
             return result.stream().map(CityMapper::toModel).toList();
         } catch (DataAccessException ex) {
             log.error("Database error while fetching cities with pagination", ex);
@@ -125,19 +116,17 @@ public class CityRepositoryAdapter implements CityServiceContract {
     @Override
     public List<City> findAllWithFilters(CityFindAllRequest request, String token) {
         try {
-            List<CityFindAllRequest.FilterGroup> filterGroups = (request.filter() != null)
-                    ? request.filter().filterGroups()
-                    : null;
-            // Build pageable with multiple sort orders
+            // Build sort object for pageable
             Sort sortObj = buildSortObject(request.sort());
             PageRequest pageable = PageRequest.of(request.page(), request.size(), sortObj);
 
-            // Build Specification using helper
+            // Build Specification using the top-level Filter object
             Specification<CityEntity> spec = CitySpecification.buildSpecification(
-                    request.search(), filterGroups
+                    request.search(), request.filter()
             );
 
-            // Query DB
+            log.info("Fetching cities with Specification and pagination: page={}, size={}", request.page(), request.size());
+
             Page<CityEntity> pageResult = repo.findAll(spec, pageable);
 
             return pageResult.stream()

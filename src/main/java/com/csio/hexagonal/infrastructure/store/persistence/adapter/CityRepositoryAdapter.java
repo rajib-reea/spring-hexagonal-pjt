@@ -6,6 +6,7 @@ import com.csio.hexagonal.infrastructure.rest.request.CityFindAllRequest;
 import com.csio.hexagonal.infrastructure.store.persistence.entity.CityEntity;
 import com.csio.hexagonal.infrastructure.store.persistence.exception.DatabaseException;
 import com.csio.hexagonal.infrastructure.store.persistence.mapper.CityMapper;
+import com.csio.hexagonal.infrastructure.store.persistence.specification.CitySpecification;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
@@ -13,6 +14,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
@@ -119,81 +121,53 @@ public class CityRepositoryAdapter implements CityServiceContract {
             throw new DatabaseException("Failed to fetch paginated cities", ex);
         }
     }
-    
-   @Override
-public List<City> findAllWithFilters(CityFindAllRequest request, String token) {
-    try {
-        // Extract filter groups safely
-        List<CityFindAllRequest.FilterGroup> filterGroups = (request.filter() != null)
-                ? request.filter().filterGroups()
-                : null;
 
-        // If no filters, delegate to pagination but still consider search
-        if (filterGroups == null || filterGroups.isEmpty()) {
-            log.info("No filter groups provided, delegating to findAllWithPagination");
-            return findAllWithPagination(
-                    request.page(),
-                    request.size(),
-                    request.search(),
-                    buildSortString(request.sort()),
-                    token
+    @Override
+    public List<City> findAllWithFilters(CityFindAllRequest request, String token) {
+        try {
+            List<CityFindAllRequest.FilterGroup> filterGroups = (request.filter() != null)
+                    ? request.filter().filterGroups()
+                    : null;
+            // Build pageable with multiple sort orders
+            Sort sortObj = buildSortObject(request.sort());
+            PageRequest pageable = PageRequest.of(request.page(), request.size(), sortObj);
+
+            // Build Specification using helper
+            Specification<CityEntity> spec = CitySpecification.buildSpecification(
+                    request.search(), filterGroups
             );
+
+            // Query DB
+            Page<CityEntity> pageResult = repo.findAll(spec, pageable);
+
+            return pageResult.stream()
+                    .map(CityMapper::toModel)
+                    .toList();
+
+        } catch (DataAccessException ex) {
+            log.error("Database error while fetching cities with filters", ex);
+            throw new DatabaseException("Failed to fetch filtered cities", ex);
         }
-
-        // Fetch entities with optional search applied
-        List<CityEntity> entities;
-        if (request.search() == null || request.search().isBlank()) {
-            entities = repo.findAll();
-        } else {
-            // Use search in name or state
-            entities = repo.findByNameOrState(request.search(), Pageable.unpaged()).getContent();
-        }
-
-        // Apply in-memory filtering
-        List<CityEntity> filtered = entities.stream()
-                .filter(entity -> filterGroups.stream().allMatch(group -> evaluateGroup(entity, group)))
-                .toList();
-
-        // TODO: implement in-memory sorting and pagination if needed
-        return filtered.stream().map(CityMapper::toModel).toList();
-
-    } catch (DataAccessException ex) {
-        log.error("Database error while fetching cities with filters", ex);
-        throw new DatabaseException("Failed to fetch filtered cities", ex);
     }
-}
 
-// Evaluate one group (AND/OR logic)
-private static boolean evaluateGroup(CityEntity entity, CityFindAllRequest.FilterGroup group) {
-    if (group.operator() == CityFindAllRequest.LogicalOperator.AND) {
-        return group.conditions().stream().allMatch(cond -> isConditionResult(entity, cond));
-    } else { // OR
-        return group.conditions().stream().anyMatch(cond -> isConditionResult(entity, cond));
-    }
-}
-
-// Condition evaluation
-private static boolean isConditionResult(CityEntity entity, CityFindAllRequest.FilterCondition condition) {
-    return switch (condition.field()) {
-        case "state" -> entity.getState().equalsIgnoreCase(condition.value());
-        case "active" -> entity.getIsActive().toString().equalsIgnoreCase(condition.value());
-        case "name" -> {
-            if (condition.operator() == CityFindAllRequest.Operator.LIKE) {
-                yield entity.getName().toLowerCase().contains(condition.value().toLowerCase());
-            } else { // EQUALS
-                yield entity.getName().equalsIgnoreCase(condition.value());
-            }
+    private Sort buildSortObject(List<CityFindAllRequest.SortOrder> sortOrders) {
+        if (sortOrders == null || sortOrders.isEmpty()) {
+            return Sort.by("name").ascending();
         }
-        default -> true;
-    };
-}
 
-// Build sort string for pagination
-private String buildSortString(List<CityFindAllRequest.SortOrder> sortOrders) {
-    return (sortOrders == null || sortOrders.isEmpty())
-            ? "name,asc"
-            : sortOrders.get(0).field() + "," + sortOrders.get(0).direction().name().toLowerCase();
-}
+        Sort sort = Sort.by(sortOrders.getFirst().field());
+        sort = sortOrders.getFirst().direction() == CityFindAllRequest.Direction.DESC
+                ? sort.descending()
+                : sort.ascending();
 
+        for (int i = 1; i < sortOrders.size(); i++) {
+            CityFindAllRequest.SortOrder so = sortOrders.get(i);
+            sort = sort.and(so.direction() == CityFindAllRequest.Direction.DESC
+                    ? Sort.by(so.field()).descending()
+                    : Sort.by(so.field()).ascending());
+        }
+
+        return sort;
+    }
 
 }

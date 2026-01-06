@@ -69,7 +69,7 @@ public class CitySpecification {
 
                 // Combine search AND filter groups
                 predicate = cb.and(predicate, combinedGroupPredicate);
-                if (predicateStr.length() > 0) predicateStr.append(" AND ");
+                if (!predicateStr.isEmpty()) predicateStr.append(" AND ");
                 predicateStr.append("(").append(groupStr).append(")");
             }
 

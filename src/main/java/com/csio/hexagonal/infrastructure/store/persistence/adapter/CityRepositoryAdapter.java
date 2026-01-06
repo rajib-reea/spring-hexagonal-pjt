@@ -120,70 +120,80 @@ public class CityRepositoryAdapter implements CityServiceContract {
         }
     }
     
-    @Override
-    public List<City> findAllWithFilters(CityFindAllRequest request, String token) {
-        try {
-            // Delegate to pagination if no filters
-            if (request.filterGroups() == null || request.filterGroups().isEmpty()) {
-                log.info("No filters provided, delegating to findAllWithPagination");
-                return findAllWithPagination(
-                        request.page(),
-                        request.size(),
-                        request.search(),
-                        buildSortString(request.sort()),
-                        token
-                );
-            }
+   @Override
+public List<City> findAllWithFilters(CityFindAllRequest request, String token) {
+    try {
+        // Extract filter groups safely
+        List<CityFindAllRequest.FilterGroup> filterGroups = (request.filter() != null)
+                ? request.filter().filterGroups()
+                : null;
 
-            // Fetch all entities
-            List<CityEntity> entities = repo.findAll();
-
-            // Apply filters in memory
-            List<CityEntity> filtered = entities.stream()
-                    .filter(entity -> request.filterGroups().stream().allMatch(group ->
-                            evaluateGroup(entity, group)
-                    ))
-                    .toList();
-
-            // Map to domain model
-            return filtered.stream().map(CityMapper::toModel).toList();
-
-        } catch (DataAccessException ex) {
-            log.error("Database error while fetching cities with filters", ex);
-            throw new DatabaseException("Failed to fetch filtered cities", ex);
+        // If no filters, delegate to pagination but still consider search
+        if (filterGroups == null || filterGroups.isEmpty()) {
+            log.info("No filter groups provided, delegating to findAllWithPagination");
+            return findAllWithPagination(
+                    request.page(),
+                    request.size(),
+                    request.search(),
+                    buildSortString(request.sort()),
+                    token
+            );
         }
-    }
 
-    // Evaluate one group (AND/OR logic)
-    private static boolean evaluateGroup(CityEntity entity, CityFindAllRequest.FilterGroup group) {
-        if (group.operator() == CityFindAllRequest.LogicalOperator.AND) {
-            return group.conditions().stream().allMatch(cond -> isConditionResult(entity, cond));
-        } else { // OR
-            return group.conditions().stream().anyMatch(cond -> isConditionResult(entity, cond));
+        // Fetch entities with optional search applied
+        List<CityEntity> entities;
+        if (request.search() == null || request.search().isBlank()) {
+            entities = repo.findAll();
+        } else {
+            // Use search in name or state
+            entities = repo.findByNameOrState(request.search(), Pageable.unpaged()).getContent();
         }
-    }
 
-    // Existing condition checker
-    private static boolean isConditionResult(CityEntity entity, CityFindAllRequest.FilterCondition condition) {
-        return switch (condition.field()) {
-            case "state" -> entity.getState().equalsIgnoreCase(condition.value());
-            case "active" -> entity.getIsActive().toString().equalsIgnoreCase(condition.value());
-            case "name" -> {
-                if (condition.operator() == CityFindAllRequest.Operator.LIKE) {
-                    yield entity.getName().toLowerCase().contains(condition.value().toLowerCase());
-                } else { // EQUALS
-                    yield entity.getName().equalsIgnoreCase(condition.value());
-                }
+        // Apply in-memory filtering
+        List<CityEntity> filtered = entities.stream()
+                .filter(entity -> filterGroups.stream().allMatch(group -> evaluateGroup(entity, group)))
+                .toList();
+
+        // TODO: implement in-memory sorting and pagination if needed
+        return filtered.stream().map(CityMapper::toModel).toList();
+
+    } catch (DataAccessException ex) {
+        log.error("Database error while fetching cities with filters", ex);
+        throw new DatabaseException("Failed to fetch filtered cities", ex);
+    }
+}
+
+// Evaluate one group (AND/OR logic)
+private static boolean evaluateGroup(CityEntity entity, CityFindAllRequest.FilterGroup group) {
+    if (group.operator() == CityFindAllRequest.LogicalOperator.AND) {
+        return group.conditions().stream().allMatch(cond -> isConditionResult(entity, cond));
+    } else { // OR
+        return group.conditions().stream().anyMatch(cond -> isConditionResult(entity, cond));
+    }
+}
+
+// Condition evaluation
+private static boolean isConditionResult(CityEntity entity, CityFindAllRequest.FilterCondition condition) {
+    return switch (condition.field()) {
+        case "state" -> entity.getState().equalsIgnoreCase(condition.value());
+        case "active" -> entity.getIsActive().toString().equalsIgnoreCase(condition.value());
+        case "name" -> {
+            if (condition.operator() == CityFindAllRequest.Operator.LIKE) {
+                yield entity.getName().toLowerCase().contains(condition.value().toLowerCase());
+            } else { // EQUALS
+                yield entity.getName().equalsIgnoreCase(condition.value());
             }
-            default -> true;
-        };
-    }
+        }
+        default -> true;
+    };
+}
 
-    // Build sort string for pagination
-    private String buildSortString(List<CityFindAllRequest.SortOrder> sortOrders) {
-        return (sortOrders == null || sortOrders.isEmpty())
-                ? "name,asc"
-                : sortOrders.get(0).field() + "," + sortOrders.get(0).direction().name().toLowerCase();
-    }
+// Build sort string for pagination
+private String buildSortString(List<CityFindAllRequest.SortOrder> sortOrders) {
+    return (sortOrders == null || sortOrders.isEmpty())
+            ? "name,asc"
+            : sortOrders.get(0).field() + "," + sortOrders.get(0).direction().name().toLowerCase();
+}
+
 
 }

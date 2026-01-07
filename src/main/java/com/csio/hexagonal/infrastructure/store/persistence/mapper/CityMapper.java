@@ -41,7 +41,7 @@ public final class CityMapper {
      */
     public static CityResponse toResponse(CityEntity city) {
         return new CityResponse(
-                city.getId().toString(), // UUID → String
+                city.getUid().toString(), // UUID → String
                 city.getIsActive(),
                 city.getName(),
                 city.getState()

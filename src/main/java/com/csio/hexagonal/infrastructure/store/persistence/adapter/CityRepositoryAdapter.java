@@ -3,16 +3,18 @@ package com.csio.hexagonal.infrastructure.store.persistence.adapter;
 import com.csio.hexagonal.application.port.out.CityServiceContract;
 import com.csio.hexagonal.domain.model.City;
 import com.csio.hexagonal.infrastructure.rest.request.CityFindAllRequest;
+import com.csio.hexagonal.infrastructure.rest.response.city.CityResponse;
+import com.csio.hexagonal.infrastructure.rest.response.helper.ResponseHelper;
+import com.csio.hexagonal.infrastructure.rest.response.wrapper.PageResponseWrapper;
 import com.csio.hexagonal.infrastructure.store.persistence.entity.CityEntity;
 import com.csio.hexagonal.infrastructure.store.persistence.exception.DatabaseException;
 import com.csio.hexagonal.infrastructure.store.persistence.mapper.CityMapper;
+import com.csio.hexagonal.infrastructure.store.persistence.specification.CitySpecification;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.*;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
@@ -92,7 +94,7 @@ public class CityRepositoryAdapter implements CityServiceContract {
     }
 
     @Override
-    public List<City> findAllWithPagination(int page, int size, String search, String sort, String token) {
+    public PageResponseWrapper<CityResponse> findAllWithPagination(int page, int size, String search, String sort, String token) {
         try {
             Sort sortObj;
             String[] sortParts = sort.split(",");
@@ -102,51 +104,50 @@ public class CityRepositoryAdapter implements CityServiceContract {
                 sortObj = Sort.by(sortParts[0]).ascending();
             }
 
-            Pageable pageable = PageRequest.of(page, size, sortObj);
+            Pageable pageable = PageRequest.of(page-1, size, sortObj);
             Page<CityEntity> result = (search == null || search.isBlank())
                     ? repo.findAll(pageable)
                     : repo.findByNameOrState(search, pageable);
+            // Map domain model to response DTO
+            Page<CityResponse> responsePage = result.map(com.csio.hexagonal.infrastructure.store.persistence.mapper.CityMapper::toResponse);
 
-            if (result.getTotalPages() == 0) return List.of();
-            if (page >= result.getTotalPages())
-                throw new IllegalArgumentException(
-                        String.format("Requested page %d exceeds total pages %d", page + 1, result.getTotalPages())
-                );
-
-            return result.stream().map(CityMapper::toModel).toList();
+            // Wrap with pagination info
+            return ResponseHelper.page(responsePage);
         } catch (DataAccessException ex) {
             log.error("Database error while fetching cities with pagination", ex);
             throw new DatabaseException("Failed to fetch paginated cities", ex);
         }
     }
-    
+
     @Override
-    public List<City> findAllWithFilters(CityFindAllRequest request, String token) {
+    public PageResponseWrapper<CityResponse> findAllWithFilters(CityFindAllRequest request, String token) {
         try {
-            // Delegate to pagination if no filters
-            if (request.filterGroups() == null || request.filterGroups().isEmpty()) {
-                log.info("No filters provided, delegating to findAllWithPagination");
-                return findAllWithPagination(
-                        request.page(),
-                        request.size(),
-                        request.search(),
-                        buildSortString(request.sort()),
-                        token
-                );
-            }
+            // Build sort object for pageable
+            Sort sortObj = buildSortObject(request.sort());
+            PageRequest pageable = PageRequest.of(request.page()-1, request.size(), sortObj);
+            // Build Specification using the top-level Filter object
+            Specification<CityEntity> spec = CitySpecification.buildSpecification(
+                    request.search(), request.filter()
+            );
+            Page<CityEntity> pageResult = repo.findAll(spec, pageable);
+            Page<CityResponse> response = pageResult.map(com.csio.hexagonal.infrastructure.store.persistence.mapper.CityMapper::toResponse);
+            // Log response info
+            log.info("Response paging info | currentPage={} | pageSize={} | totalPages={} | totalElements={}",
+                    response.getNumber() + 1, // +1 to match 1-based page number
+                    response.getSize(),
+                    response.getTotalPages(),
+                    response.getTotalElements()
+            );
 
-            // Fetch all entities
-            List<CityEntity> entities = repo.findAll();
+            // Log the response content (e.g., size and first 3 items)
+            log.info("Mapped {} cities to response DTO", response.getNumberOfElements());
+            response.getContent().stream()
+                    .limit(3) // log only first 3 for readability
+                    .forEach(c -> log.info("CityResponse: uid={}, name={}, state={}, isActive={}",
+                            c.uid(), c.name(), c.state(), c.isActive()));
 
-            // Apply filters in memory
-            List<CityEntity> filtered = entities.stream()
-                    .filter(entity -> request.filterGroups().stream().allMatch(group ->
-                            evaluateGroup(entity, group)
-                    ))
-                    .toList();
-
-            // Map to domain model
-            return filtered.stream().map(CityMapper::toModel).toList();
+            // Wrap with pagination info
+            return ResponseHelper.page(response);
 
         } catch (DataAccessException ex) {
             log.error("Database error while fetching cities with filters", ex);
@@ -154,36 +155,24 @@ public class CityRepositoryAdapter implements CityServiceContract {
         }
     }
 
-    // Evaluate one group (AND/OR logic)
-    private static boolean evaluateGroup(CityEntity entity, CityFindAllRequest.FilterGroup group) {
-        if (group.operator() == CityFindAllRequest.LogicalOperator.AND) {
-            return group.conditions().stream().allMatch(cond -> isConditionResult(entity, cond));
-        } else { // OR
-            return group.conditions().stream().anyMatch(cond -> isConditionResult(entity, cond));
+    private Sort buildSortObject(List<CityFindAllRequest.SortOrder> sortOrders) {
+        if (sortOrders == null || sortOrders.isEmpty()) {
+            return Sort.by("name").ascending();
         }
-    }
 
-    // Existing condition checker
-    private static boolean isConditionResult(CityEntity entity, CityFindAllRequest.FilterCondition condition) {
-        return switch (condition.field()) {
-            case "state" -> entity.getState().equalsIgnoreCase(condition.value());
-            case "active" -> entity.getIsActive().toString().equalsIgnoreCase(condition.value());
-            case "name" -> {
-                if (condition.operator() == CityFindAllRequest.Operator.LIKE) {
-                    yield entity.getName().toLowerCase().contains(condition.value().toLowerCase());
-                } else { // EQUALS
-                    yield entity.getName().equalsIgnoreCase(condition.value());
-                }
-            }
-            default -> true;
-        };
-    }
+        Sort sort = Sort.by(sortOrders.getFirst().field());
+        sort = sortOrders.getFirst().direction() == CityFindAllRequest.Direction.DESC
+                ? sort.descending()
+                : sort.ascending();
 
-    // Build sort string for pagination
-    private String buildSortString(List<CityFindAllRequest.SortOrder> sortOrders) {
-        return (sortOrders == null || sortOrders.isEmpty())
-                ? "name,asc"
-                : sortOrders.get(0).field() + "," + sortOrders.get(0).direction().name().toLowerCase();
+        for (int i = 1; i < sortOrders.size(); i++) {
+            CityFindAllRequest.SortOrder so = sortOrders.get(i);
+            sort = sort.and(so.direction() == CityFindAllRequest.Direction.DESC
+                    ? Sort.by(so.field()).descending()
+                    : Sort.by(so.field()).ascending());
+        }
+
+        return sort;
     }
 
 }

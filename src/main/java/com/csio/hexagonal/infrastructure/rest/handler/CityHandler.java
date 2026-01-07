@@ -190,6 +190,7 @@ import com.csio.hexagonal.infrastructure.rest.request.CityFindAllRequest;
 import com.csio.hexagonal.infrastructure.rest.response.helper.ResponseHelper;
 import com.csio.hexagonal.infrastructure.rest.request.CityCreateRequest;
 import com.csio.hexagonal.infrastructure.rest.response.city.CityResponse;
+import com.csio.hexagonal.infrastructure.rest.response.wrapper.PageResponseWrapper;
 import com.csio.hexagonal.infrastructure.rest.spec.CitySpec;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -219,13 +220,13 @@ public class CityHandler {
 
     private final CommandUseCase<CreateCityCommand, CityResponse> commandUseCase;
     private final QueryUseCase<GetCityQuery, CityResponse> getCityUseCase;
-    private final QueryUseCase<CityFindAllRequest, List<CityResponse>> getAllCityUseCase;
+    private final QueryUseCase<CityFindAllRequest, PageResponseWrapper<CityResponse>> getAllCityUseCase;
     private final Executor virtualExecutor;
 
     public CityHandler(
             CommandUseCase<CreateCityCommand, CityResponse> commandUseCase,
             QueryUseCase<GetCityQuery, CityResponse> getCityUseCase,
-            QueryUseCase<CityFindAllRequest, List<CityResponse>> getAllCityUseCase,
+            QueryUseCase<CityFindAllRequest, PageResponseWrapper<CityResponse>> getAllCityUseCase,
             @Qualifier("virtualExecutor") Executor virtualExecutor
     ) {
         this.commandUseCase = commandUseCase;
@@ -316,20 +317,35 @@ public class CityHandler {
                     )
             )
     )
+//    public Mono<ServerResponse> getAllCity(ServerRequest request) {
+//        String token = request.headers().firstHeader("Authorization");
+//
+//        return request.bodyToMono(CityFindAllRequest.class)
+//                .doOnNext(r -> log.info("Received getAllCity request: {}", r))
+//                .flatMap(r -> getAllCityUseCase.query(r, token)
+//                        .subscribeOn(Schedulers.fromExecutor(virtualExecutor))
+//                        .map(ResponseHelper::success)
+//                        .flatMap(wrapper -> ServerResponse.ok()
+//                                .contentType(MediaType.APPLICATION_JSON)
+//                                .bodyValue(wrapper)
+//                        )
+//                );
+//    }
     public Mono<ServerResponse> getAllCity(ServerRequest request) {
         String token = request.headers().firstHeader("Authorization");
 
         return request.bodyToMono(CityFindAllRequest.class)
-                .doOnNext(r -> log.info("Received getAllCity request: {}", r))
                 .flatMap(r -> getAllCityUseCase.query(r, token)
                         .subscribeOn(Schedulers.fromExecutor(virtualExecutor))
-                        .map(ResponseHelper::success)
                         .flatMap(wrapper -> ServerResponse.ok()
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .bodyValue(wrapper)
                         )
                 );
     }
+
+
+
 
 
 }

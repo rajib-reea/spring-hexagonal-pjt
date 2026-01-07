@@ -3,13 +3,17 @@ package com.csio.hexagonal.infrastructure.rest.request;
 import java.util.List;
 
 public record CityFindAllRequest(
-        LogicalOperator operator,
-        List<FilterGroup> filterGroups,
+        Filter filter,                   // nested filter object
         int page,
         int size,
-        String search,                   // add this
+        String search,                   // search field
         List<SortOrder> sort
 ) {
+
+    public record Filter(
+            LogicalOperator operator,
+            List<FilterGroup> filterGroups
+    ) {}
 
     public record FilterGroup(
             LogicalOperator operator,

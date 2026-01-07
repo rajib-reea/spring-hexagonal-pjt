@@ -3,13 +3,14 @@ package com.csio.hexagonal.infrastructure.store.persistence.mapper;
 import com.csio.hexagonal.domain.model.City;
 import com.csio.hexagonal.domain.vo.CityId;
 import com.csio.hexagonal.domain.vo.State;
+import com.csio.hexagonal.infrastructure.rest.response.city.CityResponse;
 import com.csio.hexagonal.infrastructure.store.persistence.entity.CityEntity;
 
 import java.util.UUID;
 
 public final class CityMapper {
 
-    private CityMapper() {}
+    public CityMapper() {}
 
     public static CityEntity toEntity(City city) {
         CityEntity entity = new CityEntity();
@@ -34,5 +35,16 @@ public final class CityMapper {
         }
 
         return city;
+    }
+    /**
+     * Domain model → REST response
+     */
+    public static CityResponse toResponse(CityEntity city) {
+        return new CityResponse(
+                city.getId().toString(), // UUID → String
+                city.getIsActive(),
+                city.getName(),
+                city.getState()
+        );
     }
 }

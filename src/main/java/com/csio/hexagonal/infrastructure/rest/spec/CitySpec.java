@@ -70,30 +70,33 @@ public class CitySpec {
             "Get All City Example";
     public static final String GET_ALL_EXAMPLE_VALUE = """
             {
-              "search": "San",
-              "operator": "OR",
-              "filterGroups": [
+                "search": "San",
+                "filter": {
+                "operator": "OR",
+                "filterGroups": [
                 {
-                  "operator": "AND",
-                  "conditions": [
-                    { "field": "state", "operator": "EQUALS", "value": "California" },
-                    { "field": "active", "operator": "EQUALS", "value": "true" }
-                  ]
+                        "operator": "AND",
+                        "conditions": [
+                        { "field": "state", "operator": "EQUALS", "value": "California" },
+                        { "field": "active", "operator": "EQUALS", "value": "true" }
+                        ]
                 },
                 {
-                  "operator": "OR",
-                  "conditions": [
-                    { "field": "name", "operator": "LIKE", "value": "San" },
-                    { "field": "name", "operator": "LIKE", "value": "Los" }
-                  ]
+                        "operator": "OR",
+                        "conditions": [
+                        { "field": "name", "operator": "LIKE", "value": "San" },
+                        { "field": "name", "operator": "LIKE", "value": "Los" }
+                        ]
                 }
-              ],
-              "page": 1,
-              "size": 20,
-              "sort": [
+                ]
+                },
+                "page": 1,
+                "size": 20,
+                "sort": [
                 { "field": "name", "direction": "ASC" },
                 { "field": "state", "direction": "DESC" }
-              ]
-            }
+                ]
+        }
+
             """;
 }

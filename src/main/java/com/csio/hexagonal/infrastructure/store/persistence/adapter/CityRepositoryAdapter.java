@@ -105,12 +105,6 @@ public class CityRepositoryAdapter implements CityServiceContract {
             }
 
             Pageable pageable = PageRequest.of(page-1, size, sortObj);
-            int offset = (int) pageable.getOffset(); // OFFSET = page * size
-            int pageSize = pageable.getPageSize();  // page size
-
-            // Log the pagination info
-            log.info("Fetching cities in findAllWithPagination | page={} | size={} | offset={} | sort={}", page, pageSize, offset, sort);
-
             Page<CityEntity> result = (search == null || search.isBlank())
                     ? repo.findAll(pageable)
                     : repo.findByNameOrState(search, pageable);
@@ -119,8 +113,6 @@ public class CityRepositoryAdapter implements CityServiceContract {
 
             // Wrap with pagination info
             return ResponseHelper.page(responsePage);
-
-//            return result.stream().map(CityMapper::toModel).toList();
         } catch (DataAccessException ex) {
             log.error("Database error while fetching cities with pagination", ex);
             throw new DatabaseException("Failed to fetch paginated cities", ex);
@@ -133,26 +125,13 @@ public class CityRepositoryAdapter implements CityServiceContract {
             // Build sort object for pageable
             Sort sortObj = buildSortObject(request.sort());
             PageRequest pageable = PageRequest.of(request.page()-1, request.size(), sortObj);
-             int offset = (int) pageable.getOffset(); // OFFSET = page * size
-            int pageSize = pageable.getPageSize();  // page size
-
-            log.info("Fetching cities | page={} | size={} | offset={} | sort={}", request.page(), pageSize, offset, sortObj);
-
             // Build Specification using the top-level Filter object
             Specification<CityEntity> spec = CitySpecification.buildSpecification(
                     request.search(), request.filter()
             );
-
-            log.info("Fetching cities with Specification and pagination: page={}, size={}", request.page(), request.size());
-
             Page<CityEntity> pageResult = repo.findAll(spec, pageable);
-
-//            return pageResult.stream()
-//                    .map(CityMapper::toModel)
-//                    .toList();
-            // Map domain model to response DTO
             Page<CityResponse> response = pageResult.map(com.csio.hexagonal.infrastructure.store.persistence.mapper.CityMapper::toResponse);
-            // Log paging info
+            // Log response info
             log.info("Response paging info | currentPage={} | pageSize={} | totalPages={} | totalElements={}",
                     response.getNumber() + 1, // +1 to match 1-based page number
                     response.getSize(),

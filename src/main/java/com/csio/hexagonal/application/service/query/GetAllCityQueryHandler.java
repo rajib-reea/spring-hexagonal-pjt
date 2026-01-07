@@ -7,12 +7,9 @@ import com.csio.hexagonal.infrastructure.rest.response.city.CityResponse;
 import com.csio.hexagonal.infrastructure.rest.response.wrapper.PageResponseWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
-
-import java.util.List;
 import java.util.concurrent.Executor;
 
 @Service
@@ -32,39 +29,6 @@ public class GetAllCityQueryHandler
         this.cityServiceContract = cityServiceContract;
         this.virtualExecutor = virtualExecutor;
     }
-
-//    @Override
-//    public Mono<List<CityResponse>> query(CityFindAllRequest request, String token) {
-//
-//        boolean hasFilters = request.filter() != null
-//                && request.filter().filterGroups() != null
-//                && !request.filter().filterGroups().isEmpty();
-//
-//        log.info(
-//                "Fetching cities | hasFilters={} | search={} | page={} | size={} | sort={}",
-//                hasFilters,
-//                request.search(),
-//                request.page(),
-//                request.size(),
-//                request.sort()
-//        );
-//
-//        return Mono.fromCallable(() -> {
-//                    if (hasFilters) {
-//                        return cityServiceContract.findAllWithFilters(request, token);
-//                    } else {
-//                        return cityServiceContract.findAllWithPagination(
-//                                request.page(),
-//                                request.size(),
-//                                request.search(),
-//                                buildSortString(request),
-//                                token
-//                        );
-//                    }
-//                })
-//                .subscribeOn(Schedulers.fromExecutor(virtualExecutor))
-//                .map(wrapper -> wrapper.content()); // extract list of CityResponse
-//    }
 
     @Override
     public Mono<PageResponseWrapper<CityResponse>> query(CityFindAllRequest request, String token) {

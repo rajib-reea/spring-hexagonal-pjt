@@ -5,15 +5,20 @@ import com.csio.hexagonal.infrastructure.rest.response.wrapper.SuccessResponseWr
 import org.springframework.data.domain.Page;
 
 public class ResponseHelper {
+
     public static <T> PageResponseWrapper<T> page(Page<T> pageResult) {
-        return new PageResponseWrapper<>(
-                200,
-                pageResult.getContent(),
-                pageResult.getNumber() + 1,  // convert 0-based to 1-based for clients
+        PageResponseWrapper.Meta meta = new PageResponseWrapper.Meta(
+                pageResult.getNumber() + 1,  // convert 0-based to 1-based
                 pageResult.getSize(),
                 pageResult.getPageable().getOffset(),
                 pageResult.getTotalElements(),
                 pageResult.getTotalPages()
+        );
+
+        return new PageResponseWrapper<>(
+                200,
+                meta,
+                pageResult.getContent()
         );
     }
 

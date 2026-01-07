@@ -32,6 +32,48 @@ public class GetAllCityQueryHandler
         this.virtualExecutor = virtualExecutor;
     }
 
+    //@Override
+//    public Mono<List<CityResponse>> query(CityFindAllRequest request, String token) {
+//
+//        boolean hasFilters = request.filter() != null
+//                && request.filter().filterGroups() != null
+//                && !request.filter().filterGroups().isEmpty();
+//
+//        log.info(
+//                "Fetching cities | hasFilters={} | search={} | page={} | size={} | sort={}",
+//                hasFilters,
+//                request.search(),
+//                request.page(),
+//                request.size(),
+//                request.sort()
+//        );
+//
+//        return Mono.fromCallable(() -> {
+//                    if (hasFilters) {
+//                        return cityServiceContract.findAllWithFilters(request, token);
+//                    }
+//
+//                    // No filters: delegate to pagination, support multiple sort orders
+//                    return cityServiceContract.findAllWithPagination(
+//                            request.page(),           // keep 1-based pagination
+//                            request.size(),
+//                            request.search(),
+//                            buildSortString(request),
+//                            token
+//                    );
+//                })
+//                .subscribeOn(Schedulers.fromExecutor(virtualExecutor))
+//                .map(cities ->
+//                        cities.stream()
+//                                .map(city -> new CityResponse(
+//                                        city.getId().value().toString(),
+//                                        city.isActive(),
+//                                        city.getName(),
+//                                        city.getState().value()
+//                                ))
+//                                .toList()
+//                );
+//    }
     @Override
     public Mono<List<CityResponse>> query(CityFindAllRequest request, String token) {
 
@@ -51,29 +93,20 @@ public class GetAllCityQueryHandler
         return Mono.fromCallable(() -> {
                     if (hasFilters) {
                         return cityServiceContract.findAllWithFilters(request, token);
+                    } else {
+                        return cityServiceContract.findAllWithPagination(
+                                request.page(),
+                                request.size(),
+                                request.search(),
+                                buildSortString(request),
+                                token
+                        );
                     }
-
-                    // No filters: delegate to pagination, support multiple sort orders
-                    return cityServiceContract.findAllWithPagination(
-                            request.page(),           // keep 1-based pagination
-                            request.size(),
-                            request.search(),
-                            buildSortString(request),
-                            token
-                    );
                 })
                 .subscribeOn(Schedulers.fromExecutor(virtualExecutor))
-                .map(cities ->
-                        cities.stream()
-                                .map(city -> new CityResponse(
-                                        city.getId().value().toString(),
-                                        city.isActive(),
-                                        city.getName(),
-                                        city.getState().value()
-                                ))
-                                .toList()
-                );
+                .map(wrapper -> wrapper.content()); // extract list of CityResponse
     }
+
 
     /**
      * Converts SortOrder list into a comma-separated string

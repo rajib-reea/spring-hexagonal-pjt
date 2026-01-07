@@ -3,6 +3,9 @@ package com.csio.hexagonal.infrastructure.store.persistence.adapter;
 import com.csio.hexagonal.application.port.out.CityServiceContract;
 import com.csio.hexagonal.domain.model.City;
 import com.csio.hexagonal.infrastructure.rest.request.CityFindAllRequest;
+import com.csio.hexagonal.infrastructure.rest.response.city.CityResponse;
+import com.csio.hexagonal.infrastructure.rest.response.helper.ResponseHelper;
+import com.csio.hexagonal.infrastructure.rest.response.wrapper.PageResponseWrapper;
 import com.csio.hexagonal.infrastructure.store.persistence.entity.CityEntity;
 import com.csio.hexagonal.infrastructure.store.persistence.exception.DatabaseException;
 import com.csio.hexagonal.infrastructure.store.persistence.mapper.CityMapper;
@@ -91,7 +94,7 @@ public class CityRepositoryAdapter implements CityServiceContract {
     }
 
     @Override
-    public List<City> findAllWithPagination(int page, int size, String search, String sort, String token) {
+    public PageResponseWrapper<CityResponse> findAllWithPagination(int page, int size, String search, String sort, String token) {
         try {
             Sort sortObj;
             String[] sortParts = sort.split(",");
@@ -106,13 +109,18 @@ public class CityRepositoryAdapter implements CityServiceContract {
             int pageSize = pageable.getPageSize();  // page size
 
             // Log the pagination info
-            log.info("Fetching cities | page={} | size={} | offset={} | sort={}", page, pageSize, offset, sort);
+            log.info("Fetching cities in findAllWithPagination | page={} | size={} | offset={} | sort={}", page, pageSize, offset, sort);
 
             Page<CityEntity> result = (search == null || search.isBlank())
                     ? repo.findAll(pageable)
                     : repo.findByNameOrState(search, pageable);
+            // Map domain model to response DTO
+            Page<CityResponse> responsePage = result.map(com.csio.hexagonal.infrastructure.store.persistence.mapper.CityMapper::toResponse);
 
-            return result.stream().map(CityMapper::toModel).toList();
+            // Wrap with pagination info
+            return ResponseHelper.page(responsePage);
+
+//            return result.stream().map(CityMapper::toModel).toList();
         } catch (DataAccessException ex) {
             log.error("Database error while fetching cities with pagination", ex);
             throw new DatabaseException("Failed to fetch paginated cities", ex);
@@ -120,7 +128,7 @@ public class CityRepositoryAdapter implements CityServiceContract {
     }
 
     @Override
-    public List<City> findAllWithFilters(CityFindAllRequest request, String token) {
+    public PageResponseWrapper<CityResponse> findAllWithFilters(CityFindAllRequest request, String token) {
         try {
             // Build sort object for pageable
             Sort sortObj = buildSortObject(request.sort());
@@ -139,9 +147,28 @@ public class CityRepositoryAdapter implements CityServiceContract {
 
             Page<CityEntity> pageResult = repo.findAll(spec, pageable);
 
-            return pageResult.stream()
-                    .map(CityMapper::toModel)
-                    .toList();
+//            return pageResult.stream()
+//                    .map(CityMapper::toModel)
+//                    .toList();
+            // Map domain model to response DTO
+            Page<CityResponse> response = pageResult.map(com.csio.hexagonal.infrastructure.store.persistence.mapper.CityMapper::toResponse);
+            // Log paging info
+            log.info("Response paging info | currentPage={} | pageSize={} | totalPages={} | totalElements={}",
+                    response.getNumber() + 1, // +1 to match 1-based page number
+                    response.getSize(),
+                    response.getTotalPages(),
+                    response.getTotalElements()
+            );
+
+            // Log the response content (e.g., size and first 3 items)
+            log.info("Mapped {} cities to response DTO", response.getNumberOfElements());
+            response.getContent().stream()
+                    .limit(3) // log only first 3 for readability
+                    .forEach(c -> log.info("CityResponse: uid={}, name={}, state={}, isActive={}",
+                            c.uid(), c.name(), c.state(), c.isActive()));
+
+            // Wrap with pagination info
+            return ResponseHelper.page(response);
 
         } catch (DataAccessException ex) {
             log.error("Database error while fetching cities with filters", ex);

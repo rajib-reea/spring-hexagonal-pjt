@@ -101,7 +101,13 @@ public class CityRepositoryAdapter implements CityServiceContract {
                 sortObj = Sort.by(sortParts[0]).ascending();
             }
 
-            Pageable pageable = PageRequest.of(page, size, sortObj);
+            Pageable pageable = PageRequest.of(page-1, size, sortObj);
+            int offset = (int) pageable.getOffset(); // OFFSET = page * size
+            int pageSize = pageable.getPageSize();  // page size
+
+            // Log the pagination info
+            log.info("Fetching cities | page={} | size={} | offset={} | sort={}", page, pageSize, offset, sort);
+
             Page<CityEntity> result = (search == null || search.isBlank())
                     ? repo.findAll(pageable)
                     : repo.findByNameOrState(search, pageable);
@@ -118,7 +124,11 @@ public class CityRepositoryAdapter implements CityServiceContract {
         try {
             // Build sort object for pageable
             Sort sortObj = buildSortObject(request.sort());
-            PageRequest pageable = PageRequest.of(request.page(), request.size(), sortObj);
+            PageRequest pageable = PageRequest.of(request.page()-1, request.size(), sortObj);
+             int offset = (int) pageable.getOffset(); // OFFSET = page * size
+            int pageSize = pageable.getPageSize();  // page size
+
+            log.info("Fetching cities | page={} | size={} | offset={} | sort={}", request.page(), pageSize, offset, sortObj);
 
             // Build Specification using the top-level Filter object
             Specification<CityEntity> spec = CitySpecification.buildSpecification(

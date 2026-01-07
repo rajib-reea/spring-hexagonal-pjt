@@ -4,6 +4,7 @@ import com.csio.hexagonal.application.port.in.QueryUseCase;
 import com.csio.hexagonal.application.port.out.CityServiceContract;
 import com.csio.hexagonal.infrastructure.rest.request.CityFindAllRequest;
 import com.csio.hexagonal.infrastructure.rest.response.city.CityResponse;
+import com.csio.hexagonal.infrastructure.rest.response.wrapper.PageResponseWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Sort;
@@ -16,7 +17,7 @@ import java.util.concurrent.Executor;
 
 @Service
 public class GetAllCityQueryHandler
-        implements QueryUseCase<CityFindAllRequest, List<CityResponse>> {
+        implements  QueryUseCase<CityFindAllRequest, PageResponseWrapper<CityResponse>> {
 
     private static final Logger log =
             LoggerFactory.getLogger(GetAllCityQueryHandler.class);
@@ -32,7 +33,7 @@ public class GetAllCityQueryHandler
         this.virtualExecutor = virtualExecutor;
     }
 
-    //@Override
+//    @Override
 //    public Mono<List<CityResponse>> query(CityFindAllRequest request, String token) {
 //
 //        boolean hasFilters = request.filter() != null
@@ -51,44 +52,26 @@ public class GetAllCityQueryHandler
 //        return Mono.fromCallable(() -> {
 //                    if (hasFilters) {
 //                        return cityServiceContract.findAllWithFilters(request, token);
+//                    } else {
+//                        return cityServiceContract.findAllWithPagination(
+//                                request.page(),
+//                                request.size(),
+//                                request.search(),
+//                                buildSortString(request),
+//                                token
+//                        );
 //                    }
-//
-//                    // No filters: delegate to pagination, support multiple sort orders
-//                    return cityServiceContract.findAllWithPagination(
-//                            request.page(),           // keep 1-based pagination
-//                            request.size(),
-//                            request.search(),
-//                            buildSortString(request),
-//                            token
-//                    );
 //                })
 //                .subscribeOn(Schedulers.fromExecutor(virtualExecutor))
-//                .map(cities ->
-//                        cities.stream()
-//                                .map(city -> new CityResponse(
-//                                        city.getId().value().toString(),
-//                                        city.isActive(),
-//                                        city.getName(),
-//                                        city.getState().value()
-//                                ))
-//                                .toList()
-//                );
+//                .map(wrapper -> wrapper.content()); // extract list of CityResponse
 //    }
+
     @Override
-    public Mono<List<CityResponse>> query(CityFindAllRequest request, String token) {
+    public Mono<PageResponseWrapper<CityResponse>> query(CityFindAllRequest request, String token) {
 
         boolean hasFilters = request.filter() != null
                 && request.filter().filterGroups() != null
                 && !request.filter().filterGroups().isEmpty();
-
-        log.info(
-                "Fetching cities | hasFilters={} | search={} | page={} | size={} | sort={}",
-                hasFilters,
-                request.search(),
-                request.page(),
-                request.size(),
-                request.sort()
-        );
 
         return Mono.fromCallable(() -> {
                     if (hasFilters) {
@@ -103,10 +86,8 @@ public class GetAllCityQueryHandler
                         );
                     }
                 })
-                .subscribeOn(Schedulers.fromExecutor(virtualExecutor))
-                .map(wrapper -> wrapper.content()); // extract list of CityResponse
+                .subscribeOn(Schedulers.fromExecutor(virtualExecutor));
     }
-
 
     /**
      * Converts SortOrder list into a comma-separated string

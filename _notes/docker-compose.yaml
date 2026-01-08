@@ -28,3 +28,9 @@ volumes:
 #     sys_context('USERENV', 'DB_NAME')   AS db_name,
 #     sys_context('USERENV', 'SERVICE_NAME') AS service_name
 # FROM dual;
+
+# BEGIN
+#     EXECUTE IMMEDIATE 'CREATE USER app_user IDENTIFIED BY app_pass';
+#     EXECUTE IMMEDIATE 'GRANT CONNECT, RESOURCE TO app_user';
+#     EXECUTE IMMEDIATE 'ALTER USER app_user QUOTA UNLIMITED ON USERS';
+# END;

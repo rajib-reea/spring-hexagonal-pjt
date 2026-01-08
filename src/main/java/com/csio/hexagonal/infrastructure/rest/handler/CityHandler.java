@@ -148,9 +148,4 @@ public class CityHandler {
                         )
                 );
     }
-
-
-
-
-
 }

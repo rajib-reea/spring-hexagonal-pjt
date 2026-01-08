@@ -19,16 +19,4 @@ public class CityMapper {
                 new State(request.state())
         );
     }
-
-//    /**
-//     * Domain model → REST response
-//     */
-//    public CityResponse toResponse(City city) {
-//        return new CityResponse(
-//                city.getId().value().toString(), // UUID → String
-//                city.isActive(),
-//                city.getName(),
-//                city.getState().value()
-//        );
-//    }
 }

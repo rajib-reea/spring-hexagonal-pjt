@@ -1,0 +1,30 @@
+version: "3.9"
+
+services:
+  oracle-db:
+    image: gvenzl/oracle-free:23
+    container_name: oracle-free
+    ports:
+      - "1521:1521"
+      - "5500:5500"
+    environment:
+      ORACLE_PASSWORD: oracle
+      ORACLE_DATABASE: FREEPDB1
+    volumes:
+      - oracle_data:/opt/oracle/oradata
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  oracle_data:
+
+
+
+# If we want to check database SELECT
+#     sys_context('USERENV', 'DB_NAME')   AS db_name,
+#     sys_context('USERENV', 'SERVICE_NAME') AS service_name
+# FROM dual;

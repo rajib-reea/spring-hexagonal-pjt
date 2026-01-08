@@ -7,8 +7,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.jpa.domain.Specification;
 
-import java.util.List;
-
 public class CitySpecification {
 
     private static final Logger log = LoggerFactory.getLogger(CitySpecification.class);

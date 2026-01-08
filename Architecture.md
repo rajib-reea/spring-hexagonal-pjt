@@ -15,6 +15,7 @@ graph TB
         Handler[CityHandler<br/>HTTP Handler]
         RequestDTO[Request Objects<br/>CityCreateRequest<br/>CityFindAllRequest]
         ResponseHelper[ResponseHelper<br/>Response Wrapper Utility]
+        PageResponse[PageResponseWrapper<br/>Pagination Response]
         Validator[Validator]
         ExceptionHandler[Global Exception Handler]
         APISpec[CitySpec<br/>OpenAPI Specification]
@@ -59,10 +60,6 @@ graph TB
             CityPolicyEnforcer[CityPolicyEnforcer<br/>Business Rules]
         end
         
-        subgraph "Specifications"
-            CityNameSpec[CityNameNotEmptySpec]
-        end
-        
         subgraph "Exceptions"
             DomainExceptions[Domain Exceptions<br/>InvalidCityNameException<br/>InvalidStateNameException<br/>DuplicateCityException]
         end
@@ -73,6 +70,7 @@ graph TB
         EntityMapper[Entity Mapper]
         Repository[CityRepository<br/>JPA Repository]
         Entity[CityEntity<br/>JPA Entity]
+        CitySpec[CitySpecification<br/>JPA Query Specification]
         PersistenceExceptions[DatabaseException]
     end
 
@@ -119,14 +117,15 @@ graph TB
     CityPolicyEnforcer -.->|implements| CityPolicy
     City -->|contains| CityId
     City -->|contains| State
-    City -->|validates with| CityNameSpec
     City -.->|throws| DomainExceptions
     
     %% Infrastructure Persistence Implementation
     RepoAdapter -.->|implements| CityServiceContract
     RepoAdapter -->|maps| EntityMapper
     RepoAdapter -->|uses| Repository
+    RepoAdapter -->|builds| CitySpec
     RepoAdapter -.->|throws| PersistenceExceptions
+    Repository -->|queries with| CitySpec
     Repository -->|persists| Entity
     Entity -->|stores in| Database
     
@@ -137,6 +136,8 @@ graph TB
     APIDocConfig -.->|configures| Router
     
     %% Response Path
+    Handler -->|Paginated Response| PageResponse
+    PageResponse -->|Wraps data| ResponseHelper
     Handler -->|Success/Error Response| Router
     Router -->|HTTP Response| Client
 
@@ -147,9 +148,9 @@ graph TB
     classDef external fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
     classDef data fill:#ffccbc,stroke:#bf360c,stroke-width:2px
     
-    class Router,Handler,RequestDTO,ResponseHelper,Validator,ExceptionHandler,APISpec,RepoAdapter,EntityMapper,Repository,Entity,PersistenceExceptions,ExecutorConfig,AuditingConfig,JacksonConfig,APIDocConfig infrastructure
+    class Router,Handler,RequestDTO,ResponseHelper,PageResponse,Validator,ExceptionHandler,APISpec,RepoAdapter,EntityMapper,Repository,Entity,CitySpec,PersistenceExceptions,ExecutorConfig,AuditingConfig,JacksonConfig,APIDocConfig infrastructure
     class CommandUseCase,QueryUseCase,CreateCityCommandHandler,GetCityQueryHandler,GetAllCityQueryHandler,CreateCityCommand,GetCityQuery,GetAllCityQuery,ServiceContract,CityServiceContract application
-    class City,CityId,State,CityPolicy,CityPolicyEnforcer,CityNameSpec,DomainExceptions domain
+    class City,CityId,State,CityPolicy,CityPolicyEnforcer,DomainExceptions domain
     class Client external
     class Database data
 ```
@@ -164,8 +165,9 @@ graph TB
 - **CityHandler**: Handles HTTP requests, validates input, and orchestrates use cases. Maps requests inline to commands/queries
 - **Request Objects**:
   - `CityCreateRequest`: Request DTO for creating cities with validation annotations
-  - `CityFindAllRequest`: Request DTO for filtering and paginating city queries with support for complex filtering, sorting, and searching
-- **ResponseHelper**: Utility class for wrapping responses in SuccessResponseWrapper
+  - `CityFindAllRequest`: Request DTO for filtering and paginating city queries with support for complex filtering (logical operators AND/OR, filter groups, conditions with EQUALS/LIKE/GT/LT/GTE/LTE operators), sorting, and searching
+- **ResponseHelper**: Utility class for wrapping responses in SuccessResponseWrapper or PageResponseWrapper
+- **PageResponseWrapper**: Response wrapper for paginated results with metadata (page, size, offset, totalElements, totalPages)
 - **Validator**: Validates incoming request data
 - **Global Exception Handler**: Centralized error handling and response formatting
 - **CitySpec**: OpenAPI specification constants for API documentation, including summaries, descriptions, and examples
@@ -202,16 +204,14 @@ graph TB
   - `CityPolicy`: Interface defining business rules
   - `CityPolicyEnforcer`: Implements business rules like uniqueness validation
   
-- **Specifications**:
-  - `CityNameNotEmptySpec`: Domain specification for validating city names
-  
 - **Exceptions**:
   - Domain-specific exceptions for business rule violations
 
 ### 5. Infrastructure Layer - Persistence
 - **CityRepositoryAdapter**: Adapter implementing `CityServiceContract`, translating domain operations to JPA operations
 - **Entity Mapper**: Maps between domain models (`City`) and persistence entities (`CityEntity`)
-- **CityRepository**: Spring Data JPA repository interface
+- **CityRepository**: Spring Data JPA repository interface with support for Specification-based queries
+- **CitySpecification**: JPA Specification builder for advanced filtering with logical operators (AND/OR), filter groups, and multiple condition types (EQUALS, LIKE, GT, LT, GTE, LTE). Supports both simple search and complex filtering scenarios
 - **CityEntity**: JPA entity with database annotations
 - **DatabaseException**: Custom exception for database-related errors
 
@@ -321,7 +321,7 @@ sequenceDiagram
 
 ## GetAllCity Flow Diagram
 
-The diagram below shows the detailed runtime flow for the "getAllCity" query (POST /api/v1/city/all). This endpoint supports pagination, sorting, and searching capabilities with complex filtering logic passed in the request body. Note: This endpoint uses POST instead of GET to support complex filtering operations that require a request body.
+The diagram below shows the detailed runtime flow for the "getAllCity" query (POST /api/v1/city/all). This endpoint supports pagination, sorting, and advanced filtering capabilities with complex filter groups and logical operators (AND/OR) passed in the request body. Note: This endpoint uses POST instead of GET to support complex filtering operations that require a request body.
 
 ```mermaid
 sequenceDiagram
@@ -332,6 +332,7 @@ sequenceDiagram
     participant UseCase as GetAllCityQueryHandler
     participant Persistence as CityServiceContract
     participant Adapter as CityRepositoryAdapter
+    participant Spec as CitySpecification
     participant Repo as CityRepository (JPA)
     participant DB as Database
     participant Helper as ResponseHelper
@@ -347,38 +348,29 @@ sequenceDiagram
         Handler->>Handler: Create GetAllCityQuery from request
         Handler->>UseCase: query(GetAllCityQuery, token)
         Note over UseCase: Executes on virtual thread executor
-        UseCase->>Persistence: findAllWithPagination(page, size, search, sort, token)
-        Persistence->>Adapter: findAllWithPagination(page, size, search, sort, token)
-        Adapter->>Adapter: Parse sort parameter (field, direction)
-        Adapter->>Adapter: Create Pageable with Sort
-        alt search is empty
-            Adapter->>Repo: findAll(pageable)
-        else search has value
-            Adapter->>Repo: findByNameOrState(search, pageable)
-        end
-        Repo->>DB: SELECT with pagination, sorting & filtering
+        UseCase->>Persistence: findAllWithFilters(request, token)
+        Persistence->>Adapter: findAllWithFilters(request, token)
+        Adapter->>Adapter: Build Sort object from request.sort()
+        Adapter->>Adapter: Create PageRequest with Sort
+        Adapter->>Spec: buildSpecification(search, filter)
+        Note over Spec: Builds JPA Specification with:<br/>- Search predicates (OR on name/state)<br/>- Filter groups (AND/OR logic)<br/>- Filter conditions (EQUALS, LIKE, GT, LT, etc.)
+        Spec-->>Adapter: Specification<CityEntity>
+        Adapter->>Repo: findAll(spec, pageable)
+        Repo->>DB: SELECT with specification, pagination & sorting
         DB-->>Repo: Page<CityEntity>
         Repo-->>Adapter: Page<CityEntity>
-        alt totalPages == 0
-            Adapter-->>Persistence: Empty List<City>
-        else page >= totalPages
-            Adapter-->>Handler: IllegalArgumentException (page exceeds total)
-            Handler-->>Client: 400 Bad Request
-        else valid page
-            Adapter->>Adapter: map List<CityEntity> -> List<City>
-            Adapter-->>Persistence: List<City>
-            Persistence-->>UseCase: List<City>
-            UseCase->>UseCase: map List<City> -> List<CityResponse>
-            UseCase-->>Handler: List<CityResponse>
-            Handler->>Helper: success(List<CityResponse>)
-            Helper-->>Handler: SuccessResponseWrapper
-            Handler-->>Client: 200 OK + SuccessResponseWrapper
-        end
+        Adapter->>Adapter: map Page<CityEntity> -> Page<CityResponse>
+        Adapter->>Helper: page(Page<CityResponse>)
+        Helper-->>Adapter: PageResponseWrapper<CityResponse>
+        Adapter-->>Persistence: PageResponseWrapper<CityResponse>
+        Persistence-->>UseCase: PageResponseWrapper<CityResponse>
+        UseCase-->>Handler: PageResponseWrapper<CityResponse>
+        Handler-->>Client: 200 OK + PageResponseWrapper
     end
 
     note right of Handler: Any uncaught exceptions are handled by the Global Exception Handler
-    note right of Adapter: Supports case-insensitive search on name and state fields
-    note right of Req: CityFindAllRequest supports complex filtering with logical operators (AND/OR)
+    note right of Spec: CitySpecification supports:<br/>- Logical operators (AND/OR)<br/>- Multiple filter groups<br/>- Operators: EQUALS, LIKE, GT, LT, GTE, LTE<br/>- Case-insensitive search on name and state
+    note right of Helper: PageResponseWrapper includes:<br/>- status, meta (page, size, offset, totalElements, totalPages), data
 ```
 
 ## Key Architectural Principles
@@ -442,8 +434,6 @@ src/main/java/com/csio/hexagonal/
 │   ├── policy/city/
 │   │   ├── CityPolicy.java              # Policy interface
 │   │   └── CityPolicyEnforcer.java      # Policy implementation
-│   ├── specification/
-│   │   └── CityNameNotEmptySpec.java    # Domain specification
 │   └── vo/
 │       ├── CityId.java                  # Value object
 │       └── State.java                   # Value object
@@ -474,6 +464,7 @@ src/main/java/com/csio/hexagonal/
     │   │   │   └── ResponseHelper.java   # Response wrapper utility
     │   │   └── wrapper/
     │   │       ├── ErrorResponseWrapper.java
+    │   │       ├── PageResponseWrapper.java    # Pagination response wrapper
     │   │       └── SuccessResponseWrapper.java
     │   ├── router/
     │   │   ├── group/
@@ -494,6 +485,8 @@ src/main/java/com/csio/hexagonal/
         │   └── DatabaseException.java    # Database exception
         ├── mapper/
         │   └── CityMapper.java            # Entity mapper (domain <-> JPA)
+        ├── specification/
+        │   └── CitySpecification.java    # JPA Specification builder for advanced filtering
         └── adapter/
             ├── CityRepositoryAdapter.java # Persistence adapter
             └── CityRepository.java        # JPA repository

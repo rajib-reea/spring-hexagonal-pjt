@@ -2,11 +2,21 @@
 
 This repository contains a small hexagonal-architecture Java service.
 
-## 📊 Architecture Documentation
+## 📊 Documentation
 
-**[View Complete Architecture Block Diagram →](Architecture.md)**
+### 📑 [Comprehensive Presentation →](PRESENTATION.md)
 
-The `Architecture.md` file contains comprehensive block diagrams showing:
+**NEW!** Complete presentation covering the entire project:
+- Introduction and architectural concepts
+- Technology stack and design patterns
+- Layer-by-layer breakdown with code examples
+- API documentation and usage
+- Setup instructions and best practices
+- Testing strategy and future enhancements
+
+### 🏗️ [Architecture Block Diagram →](Architecture.md)
+
+Technical architecture diagrams including:
 - Overall hexagonal architecture structure
 - Layer-by-layer component breakdown
 - Data flow sequence diagrams

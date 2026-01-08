@@ -23,6 +23,15 @@ Technical architecture diagrams including:
 - Complete file organization
 - Key design patterns and principles
 
+### 🏗️ [Hexagonal Architecture Analysis →](HEXAGONAL_ARCHITECTURE_ANALYSIS.md)
+
+Technical architecture diagrams including:
+- Overall hexagonal architecture structure
+- Layer-by-layer component breakdown
+- Data flow sequence diagrams
+- Complete file organization
+- Key design patterns and principles
+
 ## Run the Project
 
 This repo uses jdk version 25.

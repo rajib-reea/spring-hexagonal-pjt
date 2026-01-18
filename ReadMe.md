@@ -35,7 +35,7 @@ Technical architecture diagrams including:
 ## Run the Project
 
 **Prerequisites:**
-- Java 21 or higher (LTS version recommended)
+- Java 25 or higher (LTS version recommended)
 - Maven 3.6 or higher
 
 This project uses JDK 21 and requires it to be available on your system.
@@ -81,4 +81,5 @@ infrastructure/config/MetaApiConfig.java   # WebClient bean + properties binding
 
 
 Add these steps where appropriate in your workflow and inject the port into services rather than the concrete client.
+
 

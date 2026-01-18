@@ -34,7 +34,7 @@ Technical architecture diagrams including:
 
 ## Run the Project
 
-This repo uses jdk version 25.
+This repo uses jdk version 21.
 
 **Quick Start:**
 ```bash

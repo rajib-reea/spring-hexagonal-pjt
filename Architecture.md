@@ -36,7 +36,7 @@ graph TB
         subgraph "Commands & Queries"
             CreateCityCommand[CreateCityCommand]
             GetCityQuery[GetCityQuery]
-            GetAllCityQuery[GetAllCityQuery]
+            CityFilterQuery[CityFilterQuery<br/>Application Query Object]
         end
         
         subgraph "Ports Out"
@@ -105,7 +105,7 @@ graph TB
     GetAllCityQueryHandler -.->|implements| QueryUseCase
     CreateCityCommandHandler -->|uses| CreateCityCommand
     GetCityQueryHandler -->|uses| GetCityQuery
-    GetAllCityQueryHandler -->|uses| GetAllCityQuery
+    GetAllCityQueryHandler -->|uses| CityFilterQuery
     CreateCityCommandHandler -->|calls| CityServiceContract
     GetCityQueryHandler -->|calls| CityServiceContract
     GetAllCityQueryHandler -->|calls| CityServiceContract
@@ -165,7 +165,7 @@ graph TB
 - **CityHandler**: Handles HTTP requests, validates input, and orchestrates use cases. Maps requests inline to commands/queries
 - **Request Objects**:
   - `CityCreateRequest`: Request DTO for creating cities with validation annotations
-  - `CityFindAllRequest`: Request DTO for filtering and paginating city queries with support for complex filtering (logical operators AND/OR, filter groups, conditions with EQUALS/LIKE/GT/LT/GTE/LTE operators), sorting, and searching
+  - `CityFindAllRequest`: Request DTO for filtering and paginating city queries with support for complex filtering (logical operators AND/OR, filter groups, conditions with EQUALS/LIKE/GT/LT/GTE/LTE operators), sorting, and searching. Mapped to `CityFilterQuery` at infrastructure boundary
 - **ResponseHelper**: Utility class for wrapping responses in SuccessResponseWrapper or PageResponseWrapper
 - **PageResponseWrapper**: Response wrapper for paginated results with metadata (page, size, offset, totalElements, totalPages)
 - **Validator**: Validates incoming request data
@@ -186,7 +186,7 @@ graph TB
 - **Commands & Queries**:
   - `CreateCityCommand`: Command object for creating cities
   - `GetCityQuery`: Query object for retrieving a single city by ID
-  - `GetAllCityQuery`: Query object for retrieving multiple cities with pagination parameters
+  - `CityFilterQuery`: Application-layer query object for filtering/paginating cities (independent of infrastructure)
   
 - **Ports Out (Outbound Ports)**:
   - `ServiceContract`: Generic interface for persistence operations
@@ -341,15 +341,14 @@ sequenceDiagram
     Router->>Handler: route to CityHandler.getAllCity(request)
     Handler->>Req: bodyToMono(CityFindAllRequest.class)
     Req-->>Handler: CityFindAllRequest (with filters, sort, pagination)
-    Handler->>Handler: Extract and validate request parameters
+    Handler->>Handler: Map CityFindAllRequest to CityFilterQuery at boundary
     alt page < 1
         Handler-->>Client: 400 Bad Request (IllegalArgumentException)
     else page valid
-        Handler->>Handler: Create GetAllCityQuery from request
-        Handler->>UseCase: query(GetAllCityQuery, token)
+        Handler->>UseCase: query(CityFilterQuery, token)
         Note over UseCase: Executes on virtual thread executor
-        UseCase->>Persistence: findAllWithFilters(request, token)
-        Persistence->>Adapter: findAllWithFilters(request, token)
+        UseCase->>Persistence: findAllWithFilters(CityFilterQuery, token)
+        Persistence->>Adapter: findAllWithFilters(CityFilterQuery, token)
         Adapter->>Adapter: Build Sort object from request.sort()
         Adapter->>Adapter: Create PageRequest with Sort
         Adapter->>Spec: buildSpecification(search, filter)
@@ -359,17 +358,18 @@ sequenceDiagram
         Repo->>DB: SELECT with specification, pagination & sorting
         DB-->>Repo: Page<CityEntity>
         Repo-->>Adapter: Page<CityEntity>
-        Adapter->>Adapter: map Page<CityEntity> -> Page<CityResponse>
-        Adapter->>Helper: page(Page<CityResponse>)
-        Helper-->>Adapter: PageResponseWrapper<CityResponse>
-        Adapter-->>Persistence: PageResponseWrapper<CityResponse>
-        Persistence-->>UseCase: PageResponseWrapper<CityResponse>
-        UseCase-->>Handler: PageResponseWrapper<CityResponse>
+        Adapter->>Adapter: map Page<CityEntity> -> PageResult<City>
+        Adapter-->>Persistence: PageResult<City>
+        Persistence-->>UseCase: PageResult<City>
+        UseCase-->>Handler: PageResult<City>
+        Handler->>Handler: Map PageResult<City> to PageResponseWrapper<CityResponse>
         Handler-->>Client: 200 OK + PageResponseWrapper
     end
 
     note right of Handler: Any uncaught exceptions are handled by the Global Exception Handler
+    note right of Handler: Maps infrastructure CityFindAllRequest to application CityFilterQuery at boundary
     note right of Spec: CitySpecification supports:<br/>- Logical operators (AND/OR)<br/>- Multiple filter groups<br/>- Operators: EQUALS, LIKE, GT, LT, GTE, LTE<br/>- Case-insensitive search on name and state
+    note right of Handler: Maps domain PageResult<City> to infrastructure PageResponseWrapper<CityResponse>
     note right of Helper: PageResponseWrapper includes:<br/>- status, meta (page, size, offset, totalElements, totalPages), data
 ```
 
@@ -422,7 +422,7 @@ src/main/java/com/csio/hexagonal/
 │       └── query/
 │           ├── GetCityQuery.java            # Query object
 │           ├── GetCityQueryHandler.java     # Query handler
-│           ├── GetAllCityQuery.java         # Query object
+│           ├── CityFilterQuery.java         # Application query object for filtering
 │           └── GetAllCityQueryHandler.java  # Query handler
 ├── domain/                              # Domain Layer
 │   ├── exception/
@@ -444,16 +444,17 @@ src/main/java/com/csio/hexagonal/
     │   │   ├── PlatformTaskExecutorConfig.java
     │   │   └── VirtualThreadExecutorConfig.java
     │   ├── AuditingConfig.java
-    │   └── JacksonConfig.java
+    │   ├── JacksonConfig.java
+    │   └── PolicyConfig.java               # Spring bean configuration for domain policies
     ├── rest/
     │   ├── exception/
     │   │   ├── ExceptionDetail.java
     │   │   ├── ExceptionMetadataRegistry.java
     │   │   └── GlobalExceptionHandler.java
     │   ├── handler/
-    │   │   └── CityHandler.java          # HTTP handler
+    │   │   └── CityHandler.java          # HTTP handler (maps DTOs to/from domain)
     │   ├── mapper/
-    │   │   └── CityMapper.java           # Mapper (currently unused)
+    │   │   └── CityDtoMapper.java         # Maps domain models to/from DTOs
     │   ├── request/
     │   │   ├── CityCreateRequest.java    # Create city request DTO
     │   │   └── CityFindAllRequest.java   # Find all cities request DTO with filtering

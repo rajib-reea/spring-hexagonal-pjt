@@ -1,9 +1,9 @@
 package com.csio.hexagonal.infrastructure.store.persistence.adapter;
 
+import com.csio.hexagonal.application.service.query.CityFilterQuery;
 import com.csio.hexagonal.domain.vo.PageResult;
 import com.csio.hexagonal.application.port.out.CityServiceContract;
 import com.csio.hexagonal.domain.model.City;
-import com.csio.hexagonal.infrastructure.rest.request.CityFindAllRequest;
 import com.csio.hexagonal.infrastructure.store.persistence.entity.CityEntity;
 import com.csio.hexagonal.infrastructure.store.persistence.exception.DatabaseException;
 import com.csio.hexagonal.infrastructure.store.persistence.mapper.CityMapper;
@@ -127,7 +127,7 @@ public class CityRepositoryAdapter implements CityServiceContract {
     }
 
     @Override
-    public PageResult<City> findAllWithFilters(CityFindAllRequest request, String token) {
+    public PageResult<City> findAllWithFilters(CityFilterQuery request, String token) {
         try {
             // Build sort object for pageable
             Sort sortObj = buildSortObject(request.sort());
@@ -175,19 +175,19 @@ public class CityRepositoryAdapter implements CityServiceContract {
         }
     }
 
-    private Sort buildSortObject(List<CityFindAllRequest.SortOrder> sortOrders) {
+    private Sort buildSortObject(List<CityFilterQuery.SortOrder> sortOrders) {
         if (sortOrders == null || sortOrders.isEmpty()) {
             return Sort.by("name").ascending();
         }
 
         Sort sort = Sort.by(sortOrders.get(0).field());
-        sort = sortOrders.get(0).direction() == CityFindAllRequest.Direction.DESC
+        sort = sortOrders.get(0).direction() == CityFilterQuery.Direction.DESC
                 ? sort.descending()
                 : sort.ascending();
 
         for (int i = 1; i < sortOrders.size(); i++) {
-            CityFindAllRequest.SortOrder so = sortOrders.get(i);
-            sort = sort.and(so.direction() == CityFindAllRequest.Direction.DESC
+            CityFilterQuery.SortOrder so = sortOrders.get(i);
+            sort = sort.and(so.direction() == CityFilterQuery.Direction.DESC
                     ? Sort.by(so.field()).descending()
                     : Sort.by(so.field()).ascending());
         }

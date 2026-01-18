@@ -1,7 +1,7 @@
 package com.csio.hexagonal.infrastructure.store.persistence.specification;
 
+import com.csio.hexagonal.application.service.query.CityFilterQuery;
 import com.csio.hexagonal.infrastructure.store.persistence.entity.CityEntity;
-import com.csio.hexagonal.infrastructure.rest.request.CityFindAllRequest;
 import jakarta.persistence.criteria.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,7 +16,7 @@ public class CitySpecification {
      */
     public static Specification<CityEntity> buildSpecification(
             String search,
-            CityFindAllRequest.Filter filter
+            CityFilterQuery.Filter filter
     ) {
         return (root, query, cb) -> {
             Predicate predicate = cb.conjunction();
@@ -45,11 +45,11 @@ public class CitySpecification {
                 Predicate combinedGroupPredicate;
                 StringBuilder groupStr = new StringBuilder();
 
-                if (filter.operator() == CityFindAllRequest.LogicalOperator.AND) {
+                if (filter.operator() == CityFilterQuery.LogicalOperator.AND) {
                     combinedGroupPredicate = cb.conjunction();
 
                     for (int i = 0; i < filter.filterGroups().size(); i++) {
-                        CityFindAllRequest.FilterGroup group = filter.filterGroups().get(i);
+                        CityFilterQuery.FilterGroup group = filter.filterGroups().get(i);
                         Predicate groupPredicate = buildGroupPredicate(group, root, cb);
 
                         combinedGroupPredicate = cb.and(combinedGroupPredicate, groupPredicate);
@@ -63,7 +63,7 @@ public class CitySpecification {
                     combinedGroupPredicate = cb.disjunction();
 
                     for (int i = 0; i < filter.filterGroups().size(); i++) {
-                        CityFindAllRequest.FilterGroup group = filter.filterGroups().get(i);
+                        CityFilterQuery.FilterGroup group = filter.filterGroups().get(i);
                         Predicate groupPredicate = buildGroupPredicate(group, root, cb);
 
                         combinedGroupPredicate = cb.or(combinedGroupPredicate, groupPredicate);
@@ -90,21 +90,21 @@ public class CitySpecification {
 
     /* ---------------- GROUP ---------------- */
     private static Predicate buildGroupPredicate(
-            CityFindAllRequest.FilterGroup group,
+            CityFilterQuery.FilterGroup group,
             Root<CityEntity> root,
             CriteriaBuilder cb
     ) {
         Predicate groupPredicate;
 
-        if (group.operator() == CityFindAllRequest.LogicalOperator.AND) {
+        if (group.operator() == CityFilterQuery.LogicalOperator.AND) {
             groupPredicate = cb.conjunction();
-            for (CityFindAllRequest.FilterCondition cond : group.conditions()) {
+            for (CityFilterQuery.FilterCondition cond : group.conditions()) {
                 log.info("AND Condition: {}", conditionToString(cond));
                 groupPredicate = cb.and(groupPredicate, buildConditionPredicate(cond, root, cb));
             }
         } else {
             groupPredicate = cb.disjunction();
-            for (CityFindAllRequest.FilterCondition cond : group.conditions()) {
+            for (CityFilterQuery.FilterCondition cond : group.conditions()) {
                 log.info("OR Condition: {}", conditionToString(cond));
                 groupPredicate = cb.or(groupPredicate, buildConditionPredicate(cond, root, cb));
             }
@@ -116,7 +116,7 @@ public class CitySpecification {
 
     /* ---------------- CONDITION ---------------- */
     private static Predicate buildConditionPredicate(
-            CityFindAllRequest.FilterCondition condition,
+            CityFilterQuery.FilterCondition condition,
             Root<CityEntity> root,
             CriteriaBuilder cb
     ) {
@@ -156,7 +156,7 @@ public class CitySpecification {
     }
 
     /* ---------------- HELPERS ---------------- */
-    private static String groupPredicateToString(CityFindAllRequest.FilterGroup group) {
+    private static String groupPredicateToString(CityFilterQuery.FilterGroup group) {
         StringBuilder sb = new StringBuilder("(");
         String op = group.operator().name();
 
@@ -170,7 +170,7 @@ public class CitySpecification {
         return sb.toString();
     }
 
-    private static String conditionToString(CityFindAllRequest.FilterCondition cond) {
+    private static String conditionToString(CityFilterQuery.FilterCondition cond) {
         return cond.field() + " " + cond.operator() + " '" + cond.value() + "'";
     }
 

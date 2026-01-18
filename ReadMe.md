@@ -34,7 +34,11 @@ Technical architecture diagrams including:
 
 ## Run the Project
 
-This repo uses jdk version 21.
+**Prerequisites:**
+- Java 21 or higher (LTS version recommended)
+- Maven 3.6 or higher
+
+This project uses JDK 21 and requires it to be available on your system.
 
 **Quick Start:**
 ```bash

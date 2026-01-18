@@ -286,16 +286,16 @@ public class CreateCityCommandHandler
 **Query Handler** (Read operations)
 ```java
 @Service
-public class GetCityQueryHandler 
-    implements QueryUseCase<GetCityQuery, CityResponse> {
+public class GetAllCityQueryHandler 
+    implements QueryUseCase<CityFilterQuery, PageResult<City>> {
     
     private final CityServiceContract cityService;
     
     @Override
-    public CityResponse query(GetCityQuery query, String token) {
-        // 1. Retrieve from repository
-        // 2. Map to response
-        // 3. Return result
+    public Mono<PageResult<City>> query(CityFilterQuery query, String token) {
+        // 1. Retrieve from repository with filters
+        // 2. Return domain PageResult
+        // 3. Mapping happens at infrastructure boundary
     }
 }
 ```
@@ -308,7 +308,9 @@ public interface CityServiceContract {
     Optional<City> findByUid(UUID uid, String token);
     List<City> findAll(String token);
     City save(City city, String token);
-    PageResponseWrapper<CityResponse> findAllWithFilters(...);
+    PageResult<City> findAllWithFilters(CityFilterQuery query, String token);
+    PageResult<City> findAllWithPagination(int page, int size, 
+                                           String search, String sort, String token);
 }
 ```
 
@@ -341,15 +343,23 @@ public class CityRouter {
 ```java
 @Component
 public class CityHandler {
-    private final CommandUseCase<CreateCityCommand, CityResponse> createUseCase;
-    private final QueryUseCase<GetCityQuery, CityResponse> getUseCase;
+    private final CommandUseCase<CreateCityCommand, City> createUseCase;
+    private final QueryUseCase<GetCityQuery, City> getUseCase;
+    private final QueryUseCase<CityFilterQuery, PageResult<City>> getAllUseCase;
     
     public Mono<ServerResponse> createCity(ServerRequest request) {
         // 1. Extract and validate request
         // 2. Map to command
         // 3. Execute use case
-        // 4. Wrap response
+        // 4. Map domain model to DTO at boundary
         // 5. Return HTTP response
+    }
+    
+    public Mono<ServerResponse> getAllCity(ServerRequest request) {
+        // 1. Map CityFindAllRequest to CityFilterQuery at boundary
+        // 2. Execute query use case
+        // 3. Map domain PageResult<City> to PageResponseWrapper<CityResponse>
+        // 4. Return HTTP response
     }
 }
 ```
@@ -415,11 +425,11 @@ public class CityRepositoryAdapter implements CityServiceContract {
     }
     
     @Override
-    public PageResponseWrapper<CityResponse> findAllWithFilters(...) {
-        // Build JPA Specification
+    public PageResult<City> findAllWithFilters(CityFilterQuery query, String token) {
+        // Build JPA Specification from CityFilterQuery
         // Apply pagination and sorting
         // Execute query
-        // Map results
+        // Map Page<CityEntity> to PageResult<City>
     }
 }
 ```
@@ -674,19 +684,20 @@ sequenceDiagram
 
     Client->>Handler: POST /api/v1/city/all
     Note over Client,Handler: Request includes filters,<br/>pagination, sorting
-    Handler->>Handler: Validate & Map to Query
-    Handler->>QueryHandler: query(GetAllCityQuery)
-    QueryHandler->>Adapter: findAllWithFilters(request)
-    Adapter->>Adapter: Build Sort from request
+    Handler->>Handler: Map CityFindAllRequest to CityFilterQuery
+    Handler->>QueryHandler: query(CityFilterQuery, token)
+    QueryHandler->>Adapter: findAllWithFilters(CityFilterQuery, token)
+    Adapter->>Adapter: Build Sort from query
     Adapter->>Specification: buildSpecification(search, filter)
     Specification-->>Adapter: JPA Specification
     Adapter->>Repository: findAll(spec, pageable)
     Repository->>Database: SELECT with filters, pagination
     Database-->>Repository: Page<CityEntity>
     Repository-->>Adapter: Page<CityEntity>
-    Adapter->>Adapter: Map to Page<CityResponse>
-    Adapter-->>QueryHandler: PageResponseWrapper
-    QueryHandler-->>Handler: PageResponseWrapper
+    Adapter->>Adapter: Map to PageResult<City>
+    Adapter-->>QueryHandler: PageResult<City>
+    QueryHandler-->>Handler: PageResult<City>
+    Handler->>Handler: Map PageResult<City> to PageResponseWrapper<CityResponse>
     Handler-->>Client: 200 OK + Paginated Response
 ```
 
@@ -821,7 +832,7 @@ Content-Type: application/json
 
 ### 2. Command Query Responsibility Segregation (CQRS)
 - **Commands**: Write operations (`CreateCityCommand`)
-- **Queries**: Read operations (`GetCityQuery`, `GetAllCityQuery`)
+- **Queries**: Read operations (`GetCityQuery` for single city, `CityFilterQuery` for multiple cities with filtering)
 - Separate handlers for commands and queries
 
 ### 3. Repository Pattern

@@ -1,6 +1,6 @@
 package com.csio.hexagonal.application.service.query;
 
-import com.csio.hexagonal.application.dto.PageResult;
+import com.csio.hexagonal.domain.vo.PageResult;
 import com.csio.hexagonal.application.port.in.QueryUseCase;
 import com.csio.hexagonal.application.port.out.CityServiceContract;
 import com.csio.hexagonal.domain.model.City;

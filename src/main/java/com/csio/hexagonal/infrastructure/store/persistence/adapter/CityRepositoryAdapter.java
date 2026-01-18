@@ -1,6 +1,6 @@
 package com.csio.hexagonal.infrastructure.store.persistence.adapter;
 
-import com.csio.hexagonal.application.dto.PageResult;
+import com.csio.hexagonal.domain.vo.PageResult;
 import com.csio.hexagonal.application.port.out.CityServiceContract;
 import com.csio.hexagonal.domain.model.City;
 import com.csio.hexagonal.infrastructure.rest.request.CityFindAllRequest;

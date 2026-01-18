@@ -1,4 +1,4 @@
-package com.csio.hexagonal.application.dto;
+package com.csio.hexagonal.domain.vo;
 
 import java.util.List;
 

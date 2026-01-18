@@ -5,7 +5,6 @@ import com.csio.hexagonal.domain.model.City;
 import org.springframework.stereotype.Component;
 import java.util.List;
 
-@Component
 public class CityPolicyEnforcer implements CityPolicy {
 
     @Override

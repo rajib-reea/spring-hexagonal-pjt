@@ -529,10 +529,6 @@ public class CityHandler {
 // DomainExceptionTranslator.java - Translates domain exceptions to REST exceptions
 public final class DomainExceptionTranslator {
     
-    public static Throwable translate(Throwable throwable) {
-// DomainExceptionTranslator.java - Translates domain exceptions to REST exceptions
-public final class DomainExceptionTranslator {
-    
     public static RestApiException translate(Throwable domainException) {
         if (domainException instanceof DuplicateCityException) {
             return new DuplicateResourceException(domainException.getMessage(), domainException);
@@ -1189,17 +1185,27 @@ public Mono<ServerResponse> getAllCity(ServerRequest request) {
 **Current Implementation:**
 ```java
 // DomainExceptionTranslator.java
-public static Throwable translate(Throwable throwable) {
-    return switch (throwable) {
-        case DuplicateCityException e -> new DuplicateResourceException(e.getMessage());
-        case InvalidCityNameException e -> new ValidationException(e.getMessage());
-        case InvalidStateNameException e -> new ValidationException(e.getMessage());
-        default -> throwable;
-    };
+public static RestApiException translate(Throwable domainException) {
+    if (domainException instanceof DuplicateCityException) {
+        return new DuplicateResourceException(domainException.getMessage(), domainException);
+    } else if (domainException instanceof InvalidCityNameException) {
+        return new ValidationException(domainException.getMessage(), domainException);
+    } else if (domainException instanceof InvalidStateNameException) {
+        return new ValidationException(domainException.getMessage(), domainException);
+    }
+    
+    // If already a REST exception, return as-is
+    if (domainException instanceof RestApiException) {
+        return (RestApiException) domainException;
+    }
+    
+    // Unknown exception - let it propagate
+    throw new RuntimeException(domainException);
 }
 
 // CityHandler.java
 public Mono<ServerResponse> createCity(ServerRequest request) {
+    String token = request.headers().firstHeader("Authorization");
     return request.bodyToMono(CityCreateRequest.class)
         .map(req -> new CreateCityCommand(req.name(), req.state()))
         .flatMap(cmd -> commandUseCase.create(cmd, token))

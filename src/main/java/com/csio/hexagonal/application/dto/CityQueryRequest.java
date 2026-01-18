@@ -3,14 +3,14 @@ package com.csio.hexagonal.application.dto;
 import java.util.List;
 
 public record CityQueryRequest(
-        FilterCriteria filter,
+        Filter filter,
         int page,
         int size,
         String search,
         List<SortOrder> sort
 ) {
 
-    public record FilterCriteria(
+    public record Filter(
             LogicalOperator operator,
             List<FilterGroup> filterGroups
     ) {}

@@ -21,10 +21,10 @@ public final class CityDtoMapper {
      * Convert infrastructure request DTO to application DTO
      */
     public static CityQueryRequest toApplicationRequest(CityFindAllRequest infraRequest) {
-        CityQueryRequest.FilterCriteria appFilter = null;
+        CityQueryRequest.Filter appFilter = null;
         
         if (infraRequest.filter() != null) {
-            appFilter = new CityQueryRequest.FilterCriteria(
+            appFilter = new CityQueryRequest.Filter(
                     CityQueryRequest.LogicalOperator.valueOf(infraRequest.filter().operator().name()),
                     infraRequest.filter().filterGroups().stream()
                             .map(CityDtoMapper::toApplicationFilterGroup)

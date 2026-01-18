@@ -134,7 +134,7 @@ public class CityRepositoryAdapter implements CityServiceContract {
             PageRequest pageable = PageRequest.of(request.page()-1, request.size(), sortObj);
             
             // Convert application filter to infrastructure filter for JPA
-            CityQueryRequest.FilterCriteria appFilter = request.filter();
+            CityQueryRequest.Filter appFilter = request.filter();
             com.csio.hexagonal.infrastructure.rest.request.CityFindAllRequest.Filter infraFilter = null;
             
             if (appFilter != null) {
@@ -207,7 +207,7 @@ public class CityRepositoryAdapter implements CityServiceContract {
      * Converts application-layer filter to infrastructure-layer filter
      */
     private com.csio.hexagonal.infrastructure.rest.request.CityFindAllRequest.Filter convertToInfraFilter(
-            CityQueryRequest.FilterCriteria appFilter) {
+            CityQueryRequest.Filter appFilter) {
         
         if (appFilter == null || appFilter.filterGroups() == null) {
             return null;

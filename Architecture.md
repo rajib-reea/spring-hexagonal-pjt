@@ -149,7 +149,7 @@ graph TB
     classDef data fill:#ffccbc,stroke:#bf360c,stroke-width:2px
     
     class Router,Handler,RequestDTO,ResponseHelper,PageResponse,Validator,ExceptionHandler,APISpec,RepoAdapter,EntityMapper,Repository,Entity,CitySpec,PersistenceExceptions,ExecutorConfig,AuditingConfig,JacksonConfig,APIDocConfig infrastructure
-    class CommandUseCase,QueryUseCase,CreateCityCommandHandler,GetCityQueryHandler,GetAllCityQueryHandler,CreateCityCommand,GetCityQuery,GetAllCityQuery,ServiceContract,CityServiceContract application
+    class CommandUseCase,QueryUseCase,CreateCityCommandHandler,GetCityQueryHandler,GetAllCityQueryHandler,CreateCityCommand,GetCityQuery,CityFilterQuery,ServiceContract,CityServiceContract application
     class City,CityId,State,CityPolicy,CityPolicyEnforcer,DomainExceptions domain
     class Client external
     class Database data

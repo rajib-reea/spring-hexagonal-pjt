@@ -832,7 +832,7 @@ Content-Type: application/json
 
 ### 2. Command Query Responsibility Segregation (CQRS)
 - **Commands**: Write operations (`CreateCityCommand`)
-- **Queries**: Read operations (`GetCityQuery`, `GetAllCityQuery`)
+- **Queries**: Read operations (`GetCityQuery` for single city, `CityFilterQuery` for multiple cities with filtering)
 - Separate handlers for commands and queries
 
 ### 3. Repository Pattern

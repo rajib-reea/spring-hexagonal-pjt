@@ -489,7 +489,7 @@ public class CityRepositoryAdapter implements CityServiceContract {
 public class CityHandler {
     private final CommandUseCase<CreateCityCommand, City> commandUseCase;
     private final QueryUseCase<GetCityQuery, City> getCityUseCase;
-    private final QueryUseCase<CityFindAllRequest, PageResult<City>> getAllCityUseCase;
+    private final QueryUseCase<CityFilterQuery, PageResult<City>> getAllCityUseCase;
     
     public Mono<ServerResponse> createCity(ServerRequest request) {
         return request.bodyToMono(CityCreateRequest.class)
@@ -521,7 +521,7 @@ public class CityHandler {
 - Dedicated command and query objects
 - Separate handlers for each operation
 - Command: `CreateCityCommandHandler`
-- Queries: `GetCityQueryHandler`, `GetAllCityQueryHandler`
+- Queries: `GetCityQueryHandler`, `GetAllCityQueryHandler` (uses `CityFilterQuery`)
 
 ### 3. **Well-Defined Ports** ⭐⭐⭐⭐
 
@@ -800,7 +800,7 @@ private CityFilterQuery toCityFilterQuery(CityFindAllRequest request) {
 
 3. **CQRS Pattern** ⭐⭐⭐⭐⭐
    - Commands: `CreateCityCommand`, `CreateCityCommandHandler`
-   - Queries: `GetCityQuery`, `GetAllCityQuery` with handlers
+   - Queries: `GetCityQuery`, `CityFilterQuery` with handlers
    - Clear separation of read and write operations
 
 4. **Specification Pattern** ⭐⭐⭐⭐⭐

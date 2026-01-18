@@ -1,11 +1,9 @@
 package com.csio.hexagonal.infrastructure.store.persistence.adapter;
 
+import com.csio.hexagonal.application.dto.CityQueryRequest;
+import com.csio.hexagonal.application.dto.PageResult;
 import com.csio.hexagonal.application.port.out.CityServiceContract;
 import com.csio.hexagonal.domain.model.City;
-import com.csio.hexagonal.infrastructure.rest.request.CityFindAllRequest;
-import com.csio.hexagonal.infrastructure.rest.response.city.CityResponse;
-import com.csio.hexagonal.infrastructure.rest.response.helper.ResponseHelper;
-import com.csio.hexagonal.infrastructure.rest.response.wrapper.PageResponseWrapper;
 import com.csio.hexagonal.infrastructure.store.persistence.entity.CityEntity;
 import com.csio.hexagonal.infrastructure.store.persistence.exception.DatabaseException;
 import com.csio.hexagonal.infrastructure.store.persistence.mapper.CityMapper;
@@ -94,7 +92,7 @@ public class CityRepositoryAdapter implements CityServiceContract {
     }
 
     @Override
-    public PageResponseWrapper<CityResponse> findAllWithPagination(int page, int size, String search, String sort, String token) {
+    public PageResult<City> findAllWithPagination(int page, int size, String search, String sort, String token) {
         try {
             Sort sortObj;
             String[] sortParts = sort.split(",");
@@ -108,11 +106,20 @@ public class CityRepositoryAdapter implements CityServiceContract {
             Page<CityEntity> result = (search == null || search.isBlank())
                     ? repo.findAll(pageable)
                     : repo.findByNameOrState(search, pageable);
-            // Map domain model to response DTO
-            Page<CityResponse> responsePage = result.map(com.csio.hexagonal.infrastructure.store.persistence.mapper.CityMapper::toResponse);
-
-            // Wrap with pagination info
-            return ResponseHelper.page(responsePage);
+            
+            // Map entities to domain models
+            List<City> cities = result.getContent().stream()
+                    .map(CityMapper::toModel)
+                    .toList();
+            
+            // Return PageResult with domain models
+            return PageResult.of(
+                    cities,
+                    page,
+                    size,
+                    result.getTotalElements(),
+                    result.getTotalPages()
+            );
         } catch (DataAccessException ex) {
             log.error("Database error while fetching cities with pagination", ex);
             throw new DatabaseException("Failed to fetch paginated cities", ex);
@@ -120,34 +127,55 @@ public class CityRepositoryAdapter implements CityServiceContract {
     }
 
     @Override
-    public PageResponseWrapper<CityResponse> findAllWithFilters(CityFindAllRequest request, String token) {
+    public PageResult<City> findAllWithFilters(CityQueryRequest request, String token) {
         try {
             // Build sort object for pageable
             Sort sortObj = buildSortObject(request.sort());
             PageRequest pageable = PageRequest.of(request.page()-1, request.size(), sortObj);
-            // Build Specification using the top-level Filter object
+            
+            // Convert application filter to infrastructure filter for JPA
+            CityQueryRequest.FilterCriteria appFilter = request.filter();
+            com.csio.hexagonal.infrastructure.rest.request.CityFindAllRequest.Filter infraFilter = null;
+            
+            if (appFilter != null) {
+                infraFilter = convertToInfraFilter(appFilter);
+            }
+            
+            // Build Specification using the filter
             Specification<CityEntity> spec = CitySpecification.buildSpecification(
-                    request.search(), request.filter()
+                    request.search(), infraFilter
             );
+            
             Page<CityEntity> pageResult = repo.findAll(spec, pageable);
-            Page<CityResponse> response = pageResult.map(com.csio.hexagonal.infrastructure.store.persistence.mapper.CityMapper::toResponse);
+            
+            // Map entities to domain models
+            List<City> cities = pageResult.getContent().stream()
+                    .map(CityMapper::toModel)
+                    .toList();
+            
             // Log response info
             log.info("Response paging info | currentPage={} | pageSize={} | totalPages={} | totalElements={}",
-                    response.getNumber() + 1, // +1 to match 1-based page number
-                    response.getSize(),
-                    response.getTotalPages(),
-                    response.getTotalElements()
+                    pageResult.getNumber() + 1, // +1 to match 1-based page number
+                    pageResult.getSize(),
+                    pageResult.getTotalPages(),
+                    pageResult.getTotalElements()
             );
 
             // Log the response content (e.g., size and first 3 items)
-            log.info("Mapped {} cities to response DTO", response.getNumberOfElements());
-            response.getContent().stream()
+            log.info("Mapped {} cities to domain models", cities.size());
+            cities.stream()
                     .limit(3) // log only first 3 for readability
-                    .forEach(c -> log.info("CityResponse: uid={}, name={}, state={}, isActive={}",
-                            c.uid(), c.name(), c.state(), c.isActive()));
+                    .forEach(c -> log.info("City: uid={}, name={}, state={}, isActive={}",
+                            c.getId().value(), c.getName(), c.getState().value(), c.isActive()));
 
-            // Wrap with pagination info
-            return ResponseHelper.page(response);
+            // Return PageResult with domain models
+            return PageResult.of(
+                    cities,
+                    request.page(),
+                    request.size(),
+                    pageResult.getTotalElements(),
+                    pageResult.getTotalPages()
+            );
 
         } catch (DataAccessException ex) {
             log.error("Database error while fetching cities with filters", ex);
@@ -155,24 +183,84 @@ public class CityRepositoryAdapter implements CityServiceContract {
         }
     }
 
-    private Sort buildSortObject(List<CityFindAllRequest.SortOrder> sortOrders) {
+    private Sort buildSortObject(List<CityQueryRequest.SortOrder> sortOrders) {
         if (sortOrders == null || sortOrders.isEmpty()) {
             return Sort.by("name").ascending();
         }
 
-        Sort sort = Sort.by(sortOrders.getFirst().field());
-        sort = sortOrders.getFirst().direction() == CityFindAllRequest.Direction.DESC
+        Sort sort = Sort.by(sortOrders.get(0).field());
+        sort = sortOrders.get(0).direction() == CityQueryRequest.Direction.DESC
                 ? sort.descending()
                 : sort.ascending();
 
         for (int i = 1; i < sortOrders.size(); i++) {
-            CityFindAllRequest.SortOrder so = sortOrders.get(i);
-            sort = sort.and(so.direction() == CityFindAllRequest.Direction.DESC
+            CityQueryRequest.SortOrder so = sortOrders.get(i);
+            sort = sort.and(so.direction() == CityQueryRequest.Direction.DESC
                     ? Sort.by(so.field()).descending()
                     : Sort.by(so.field()).ascending());
         }
 
         return sort;
+    }
+    
+    /**
+     * Converts application-layer filter to infrastructure-layer filter
+     */
+    private com.csio.hexagonal.infrastructure.rest.request.CityFindAllRequest.Filter convertToInfraFilter(
+            CityQueryRequest.FilterCriteria appFilter) {
+        
+        if (appFilter == null || appFilter.filterGroups() == null) {
+            return null;
+        }
+        
+        List<com.csio.hexagonal.infrastructure.rest.request.CityFindAllRequest.FilterGroup> infraFilterGroups = 
+                appFilter.filterGroups().stream()
+                    .map(this::convertFilterGroup)
+                    .toList();
+        
+        com.csio.hexagonal.infrastructure.rest.request.CityFindAllRequest.LogicalOperator infraOp = 
+                com.csio.hexagonal.infrastructure.rest.request.CityFindAllRequest.LogicalOperator.valueOf(
+                        appFilter.operator().name()
+                );
+        
+        return new com.csio.hexagonal.infrastructure.rest.request.CityFindAllRequest.Filter(
+                infraOp,
+                infraFilterGroups
+        );
+    }
+    
+    private com.csio.hexagonal.infrastructure.rest.request.CityFindAllRequest.FilterGroup convertFilterGroup(
+            CityQueryRequest.FilterGroup appGroup) {
+        
+        List<com.csio.hexagonal.infrastructure.rest.request.CityFindAllRequest.FilterCondition> infraConditions =
+                appGroup.conditions().stream()
+                    .map(this::convertFilterCondition)
+                    .toList();
+        
+        com.csio.hexagonal.infrastructure.rest.request.CityFindAllRequest.LogicalOperator infraOp = 
+                com.csio.hexagonal.infrastructure.rest.request.CityFindAllRequest.LogicalOperator.valueOf(
+                        appGroup.operator().name()
+                );
+        
+        return new com.csio.hexagonal.infrastructure.rest.request.CityFindAllRequest.FilterGroup(
+                infraOp,
+                infraConditions
+        );
+    }
+    
+    private com.csio.hexagonal.infrastructure.rest.request.CityFindAllRequest.FilterCondition convertFilterCondition(
+            CityQueryRequest.FilterCondition appCondition) {
+        
+        com.csio.hexagonal.infrastructure.rest.request.CityFindAllRequest.Operator infraOp = 
+                com.csio.hexagonal.infrastructure.rest.request.CityFindAllRequest.Operator.valueOf(
+                        appCondition.operator().name()
+                );
+        
+        return new com.csio.hexagonal.infrastructure.rest.request.CityFindAllRequest.FilterCondition(
+                appCondition.field(),
+                infraOp,
+                appCondition.value()
+        );
     }
 
 }

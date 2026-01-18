@@ -6,14 +6,13 @@ import com.csio.hexagonal.domain.model.City;
 import com.csio.hexagonal.domain.policy.city.CityPolicy;
 import com.csio.hexagonal.domain.vo.CityId;
 import com.csio.hexagonal.domain.vo.State;
-import com.csio.hexagonal.infrastructure.rest.response.city.CityResponse;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 import java.util.concurrent.Executor;
 
 @Service
-public class CreateCityCommandHandler implements CommandUseCase<CreateCityCommand, CityResponse> {
+public class CreateCityCommandHandler implements CommandUseCase<CreateCityCommand, City> {
 
     private final CityServiceContract cityPersistencePort;
     private final CityPolicy cityPolicy;
@@ -28,7 +27,7 @@ public class CreateCityCommandHandler implements CommandUseCase<CreateCityComman
     }
 
     @Override
-    public Mono<CityResponse> create(CreateCityCommand command, String token) {
+    public Mono<City> create(CreateCityCommand command, String token) {
 
         City city = new City(
                 CityId.newId(),
@@ -41,12 +40,6 @@ public class CreateCityCommandHandler implements CommandUseCase<CreateCityComman
                 .flatMap(existing -> Mono.fromRunnable(() -> cityPolicy.ensureUnique(city, existing))
                         .subscribeOn(Schedulers.fromExecutor(cpuExecutor))
                         .then(Mono.fromCallable(() -> cityPersistencePort.save(city, token))
-                                .subscribeOn(Schedulers.fromExecutor(virtualExecutor))))
-                .map(savedCity -> new CityResponse(
-                        savedCity.getId().value().toString(),
-                        savedCity.isActive(),
-                        savedCity.getName(),
-                        savedCity.getState().value()
-                ));
+                                .subscribeOn(Schedulers.fromExecutor(virtualExecutor))));
     }
 }

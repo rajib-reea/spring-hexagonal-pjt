@@ -1,3 +1,6 @@
+//Spring Boot provides a default transaction manager. 
+//However, if you have multiple databases (e.g., Oracle and PostgreSQL), Spring won't know which transaction manager to use when you annotate a method with @Transactional.
+
 package com.csio.hexagonal.infrastructure.config;
 
 import org.springframework.beans.factory.annotation.Qualifier;

@@ -1,6 +1,6 @@
 package com.csio.hexagonal.infrastructure.rest.validator;
 
-import com.csio.hexagonal.domain.exception.InvalidCityNameException;
+import com.csio.hexagonal.infrastructure.rest.exception.ValidationException;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindingResult;
@@ -27,8 +27,8 @@ public class Validator {
             String errorMessage = Objects
                     .requireNonNull(result.getAllErrors().get(0).getDefaultMessage());
 
-            // ✅ domain exception, not web exception
-            return Mono.error(new InvalidCityNameException(errorMessage));
+            // ✅ REST layer exception, not domain exception
+            return Mono.error(new ValidationException(errorMessage));
         }
 
         return Mono.just(target);

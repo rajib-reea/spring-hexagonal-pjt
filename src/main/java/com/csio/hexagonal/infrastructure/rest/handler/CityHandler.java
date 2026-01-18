@@ -1,5 +1,6 @@
 package com.csio.hexagonal.infrastructure.rest.handler;
 
+import com.csio.hexagonal.application.service.query.CityFilterQuery;
 import com.csio.hexagonal.domain.vo.PageResult;
 import com.csio.hexagonal.application.port.in.CommandUseCase;
 import com.csio.hexagonal.application.port.in.QueryUseCase;
@@ -41,13 +42,13 @@ public class CityHandler {
 
     private final CommandUseCase<CreateCityCommand, City> commandUseCase;
     private final QueryUseCase<GetCityQuery, City> getCityUseCase;
-    private final QueryUseCase<CityFindAllRequest, PageResult<City>> getAllCityUseCase;
+    private final QueryUseCase<CityFilterQuery, PageResult<City>> getAllCityUseCase;
     private final Executor virtualExecutor;
 
     public CityHandler(
             CommandUseCase<CreateCityCommand, City> commandUseCase,
             QueryUseCase<GetCityQuery, City> getCityUseCase,
-            QueryUseCase<CityFindAllRequest, PageResult<City>> getAllCityUseCase,
+            QueryUseCase<CityFilterQuery, PageResult<City>> getAllCityUseCase,
             @Qualifier("virtualExecutor") Executor virtualExecutor
     ) {
         this.commandUseCase = commandUseCase;
@@ -144,6 +145,7 @@ public class CityHandler {
         String token = request.headers().firstHeader("Authorization");
 
         return request.bodyToMono(CityFindAllRequest.class)
+                .map(this::toCityFilterQuery) // Map infrastructure DTO to application query
                 .flatMap(cityRequest -> getAllCityUseCase.query(cityRequest, token)
                         .subscribeOn(Schedulers.fromExecutor(virtualExecutor))
                         .map(pageResult -> {
@@ -169,5 +171,61 @@ public class CityHandler {
                                 .bodyValue(wrapper)
                         )
                 );
+    }
+
+    /**
+     * Maps infrastructure DTO (CityFindAllRequest) to application query object (CityFilterQuery).
+     * This mapping happens at the infrastructure boundary to maintain proper dependency direction.
+     */
+    private CityFilterQuery toCityFilterQuery(CityFindAllRequest request) {
+        return new CityFilterQuery(
+                mapFilter(request.filter()),
+                request.page(),
+                request.size(),
+                request.search(),
+                mapSortOrders(request.sort())
+        );
+    }
+
+    private CityFilterQuery.Filter mapFilter(CityFindAllRequest.Filter filter) {
+        if (filter == null) {
+            return null;
+        }
+        return new CityFilterQuery.Filter(
+                CityFilterQuery.LogicalOperator.valueOf(filter.operator().name()),
+                filter.filterGroups() == null ? null :
+                        filter.filterGroups().stream()
+                                .map(this::mapFilterGroup)
+                                .toList()
+        );
+    }
+
+    private CityFilterQuery.FilterGroup mapFilterGroup(CityFindAllRequest.FilterGroup group) {
+        return new CityFilterQuery.FilterGroup(
+                CityFilterQuery.LogicalOperator.valueOf(group.operator().name()),
+                group.conditions().stream()
+                        .map(this::mapFilterCondition)
+                        .toList()
+        );
+    }
+
+    private CityFilterQuery.FilterCondition mapFilterCondition(CityFindAllRequest.FilterCondition condition) {
+        return new CityFilterQuery.FilterCondition(
+                condition.field(),
+                CityFilterQuery.Operator.valueOf(condition.operator().name()),
+                condition.value()
+        );
+    }
+
+    private List<CityFilterQuery.SortOrder> mapSortOrders(List<CityFindAllRequest.SortOrder> sortOrders) {
+        if (sortOrders == null) {
+            return null;
+        }
+        return sortOrders.stream()
+                .map(so -> new CityFilterQuery.SortOrder(
+                        so.field(),
+                        CityFilterQuery.Direction.valueOf(so.direction().name())
+                ))
+                .toList();
     }
 }

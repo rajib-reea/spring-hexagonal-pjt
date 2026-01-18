@@ -530,15 +530,25 @@ public class CityHandler {
 public final class DomainExceptionTranslator {
     
     public static Throwable translate(Throwable throwable) {
-        return switch (throwable) {
-            case DuplicateCityException e -> 
-                new DuplicateResourceException(e.getMessage());
-            case InvalidCityNameException e -> 
-                new ValidationException(e.getMessage());
-            case InvalidStateNameException e -> 
-                new ValidationException(e.getMessage());
-            default -> throwable;  // Pass through other exceptions
-        };
+// DomainExceptionTranslator.java - Translates domain exceptions to REST exceptions
+public final class DomainExceptionTranslator {
+    
+    public static RestApiException translate(Throwable domainException) {
+        if (domainException instanceof DuplicateCityException) {
+            return new DuplicateResourceException(domainException.getMessage(), domainException);
+        } else if (domainException instanceof InvalidCityNameException) {
+            return new ValidationException(domainException.getMessage(), domainException);
+        } else if (domainException instanceof InvalidStateNameException) {
+            return new ValidationException(domainException.getMessage(), domainException);
+        }
+        
+        // If already a REST exception, return as-is
+        if (domainException instanceof RestApiException) {
+            return (RestApiException) domainException;
+        }
+        
+        // Unknown exception - let it propagate
+        throw new RuntimeException(domainException);
     }
 }
 
@@ -554,33 +564,41 @@ public class RestApiException extends RuntimeException {
 
 // ValidationException.java - For validation errors
 public class ValidationException extends RestApiException {
-    public ValidationException(String message) {
+    public ValidationException(String message, Throwable cause) {
         super(HttpStatus.BAD_REQUEST, message);
     }
 }
 
 // GlobalExceptionHandler.java - Centralized error handling
 @Component
+@Order(Ordered.HIGHEST_PRECEDENCE)
 public class GlobalExceptionHandler implements WebExceptionHandler {
+    
+    private final ObjectMapper objectMapper;
     
     @Override
     public Mono<Void> handle(ServerWebExchange exchange, Throwable ex) {
-        if (ex instanceof RestApiException restEx) {
-            return handleRestApiException(exchange, restEx);
-        }
-        return handleGenericException(exchange, ex);
-    }
-    
-    private Mono<Void> handleRestApiException(ServerWebExchange exchange, 
-                                                RestApiException ex) {
-        ExceptionDetail detail = ExceptionMetadataRegistry.getDetail(ex);
-        ErrorResponseWrapper response = new ErrorResponseWrapper(
-            ex.getStatus().value(),
+        ExceptionMetadataRegistry.ExceptionMetadata metadata = 
+            ExceptionMetadataRegistry.getMetadata(ex);
+        
+        ExceptionDetail detail = new ExceptionDetail(
+            exchange.getRequest().getPath().value(),
+            metadata.errorTitle(),
+            ex.getMessage() != null ? ex.getMessage() : ex.getClass().getSimpleName(),
+            Instant.now()
+        );
+        
+        ErrorResponseWrapper wrapper = new ErrorResponseWrapper(
+            metadata.status().value(), 
             detail
         );
         
-        exchange.getResponse().setStatusCode(ex.getStatus());
-        return exchange.getResponse().writeWith(/* JSON response */);
+        exchange.getResponse().setStatusCode(metadata.status());
+        exchange.getResponse().getHeaders().setContentType(MediaType.APPLICATION_JSON);
+        
+        byte[] bytes = objectMapper.writeValueAsBytes(wrapper);
+        return exchange.getResponse()
+                .writeWith(Mono.just(exchange.getResponse().bufferFactory().wrap(bytes)));
     }
 }
 ```
@@ -674,17 +692,27 @@ import com.csio.hexagonal.domain.exception.InvalidCityNameException;
 **Current Implementation:**
 ```java
 // DomainExceptionTranslator.java - Translates at boundary
-public static Throwable translate(Throwable throwable) {
-    return switch (throwable) {
-        case DuplicateCityException e -> new DuplicateResourceException(e.getMessage());
-        case InvalidCityNameException e -> new ValidationException(e.getMessage());
-        case InvalidStateNameException e -> new ValidationException(e.getMessage());
-        default -> throwable;
-    };
+public static RestApiException translate(Throwable domainException) {
+    if (domainException instanceof DuplicateCityException) {
+        return new DuplicateResourceException(domainException.getMessage(), domainException);
+    } else if (domainException instanceof InvalidCityNameException) {
+        return new ValidationException(domainException.getMessage(), domainException);
+    } else if (domainException instanceof InvalidStateNameException) {
+        return new ValidationException(domainException.getMessage(), domainException);
+    }
+    
+    // If already a REST exception, return as-is
+    if (domainException instanceof RestApiException) {
+        return (RestApiException) domainException;
+    }
+    
+    // Unknown exception - let it propagate
+    throw new RuntimeException(domainException);
 }
 
 // CityHandler.java - Uses translation
 public Mono<ServerResponse> createCity(ServerRequest request) {
+    String token = request.headers().firstHeader("Authorization");
     return request.bodyToMono(CityCreateRequest.class)
             .map(req -> new CreateCityCommand(req.name(), req.state()))
             .flatMap(cmd -> commandUseCase.create(cmd, token))

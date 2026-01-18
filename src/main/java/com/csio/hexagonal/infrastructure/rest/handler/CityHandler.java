@@ -1,15 +1,18 @@
 package com.csio.hexagonal.infrastructure.rest.handler;
 
+import com.csio.hexagonal.application.dto.CityQueryRequest;
+import com.csio.hexagonal.application.dto.PageResult;
 import com.csio.hexagonal.application.port.in.CommandUseCase;
 import com.csio.hexagonal.application.port.in.QueryUseCase;
 import com.csio.hexagonal.application.service.command.CreateCityCommand;
 import com.csio.hexagonal.application.service.query.GetAllCityQuery;
 import com.csio.hexagonal.application.service.query.GetCityQuery;
-import com.csio.hexagonal.infrastructure.rest.request.CityFindAllRequest;
+import com.csio.hexagonal.domain.model.City;
+import com.csio.hexagonal.infrastructure.rest.mapper.CityDtoMapper;
 import com.csio.hexagonal.infrastructure.rest.response.helper.ResponseHelper;
 import com.csio.hexagonal.infrastructure.rest.request.CityCreateRequest;
+import com.csio.hexagonal.infrastructure.rest.request.CityFindAllRequest;
 import com.csio.hexagonal.infrastructure.rest.response.city.CityResponse;
-import com.csio.hexagonal.infrastructure.rest.response.wrapper.PageResponseWrapper;
 import com.csio.hexagonal.infrastructure.rest.spec.CitySpec;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -37,15 +40,15 @@ public class CityHandler {
 
     private static final Logger log = LoggerFactory.getLogger(CityHandler.class);
 
-    private final CommandUseCase<CreateCityCommand, CityResponse> commandUseCase;
-    private final QueryUseCase<GetCityQuery, CityResponse> getCityUseCase;
-    private final QueryUseCase<CityFindAllRequest, PageResponseWrapper<CityResponse>> getAllCityUseCase;
+    private final CommandUseCase<CreateCityCommand, City> commandUseCase;
+    private final QueryUseCase<GetCityQuery, City> getCityUseCase;
+    private final QueryUseCase<CityQueryRequest, PageResult<City>> getAllCityUseCase;
     private final Executor virtualExecutor;
 
     public CityHandler(
-            CommandUseCase<CreateCityCommand, CityResponse> commandUseCase,
-            QueryUseCase<GetCityQuery, CityResponse> getCityUseCase,
-            QueryUseCase<CityFindAllRequest, PageResponseWrapper<CityResponse>> getAllCityUseCase,
+            CommandUseCase<CreateCityCommand, City> commandUseCase,
+            QueryUseCase<GetCityQuery, City> getCityUseCase,
+            QueryUseCase<CityQueryRequest, PageResult<City>> getAllCityUseCase,
             @Qualifier("virtualExecutor") Executor virtualExecutor
     ) {
         this.commandUseCase = commandUseCase;
@@ -81,7 +84,8 @@ public class CityHandler {
                 .doOnNext(cmd -> log.info("Mapped to CreateCityCommand: {}", cmd))
                 .flatMap(cmd -> commandUseCase.create(cmd, token)
                         .subscribeOn(Schedulers.fromExecutor(virtualExecutor)))
-                .doOnNext(res -> log.info("Service returned response: {}", res))
+                .doOnNext(city -> log.info("Service returned City: {}", city))
+                .map(CityDtoMapper::toResponse)  // Map domain model to DTO at infrastructure boundary
                 .map(ResponseHelper::success)
                 .flatMap(wrapper -> ServerResponse.ok()
                         .contentType(MediaType.APPLICATION_JSON)
@@ -111,6 +115,7 @@ public class CityHandler {
 
         return getCityUseCase.query(query, token)
                 .subscribeOn(Schedulers.fromExecutor(virtualExecutor))
+                .map(CityDtoMapper::toResponse)  // Map domain model to DTO at infrastructure boundary
                 .map(ResponseHelper::success)
                 .flatMap(wrapper -> ServerResponse.ok()
                         .contentType(MediaType.APPLICATION_JSON)
@@ -140,8 +145,27 @@ public class CityHandler {
         String token = request.headers().firstHeader("Authorization");
 
         return request.bodyToMono(CityFindAllRequest.class)
-                .flatMap(r -> getAllCityUseCase.query(r, token)
+                .map(CityDtoMapper::toApplicationRequest)  // Convert infrastructure DTO to application DTO
+                .flatMap(appRequest -> getAllCityUseCase.query(appRequest, token)
                         .subscribeOn(Schedulers.fromExecutor(virtualExecutor))
+                        .map(pageResult -> {
+                            // Map domain models to response DTOs
+                            List<CityResponse> responseDtos = pageResult.content().stream()
+                                    .map(CityDtoMapper::toResponse)
+                                    .toList();
+                            
+                            // Create PageResult with response DTOs
+                            PageResult<CityResponse> responsePage = PageResult.of(
+                                    responseDtos,
+                                    pageResult.page(),
+                                    pageResult.size(),
+                                    pageResult.totalElements(),
+                                    pageResult.totalPages()
+                            );
+                            
+                            // Convert to infrastructure wrapper
+                            return CityDtoMapper.toPageResponseWrapper(responsePage);
+                        })
                         .flatMap(wrapper -> ServerResponse.ok()
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .bodyValue(wrapper)

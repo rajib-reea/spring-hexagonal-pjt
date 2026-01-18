@@ -8,6 +8,7 @@ import com.csio.hexagonal.application.service.command.CreateCityCommand;
 import com.csio.hexagonal.application.service.query.GetAllCityQuery;
 import com.csio.hexagonal.application.service.query.GetCityQuery;
 import com.csio.hexagonal.domain.model.City;
+import com.csio.hexagonal.infrastructure.rest.exception.DomainExceptionTranslator;
 import com.csio.hexagonal.infrastructure.rest.mapper.CityDtoMapper;
 import com.csio.hexagonal.infrastructure.rest.response.helper.ResponseHelper;
 import com.csio.hexagonal.infrastructure.rest.request.CityCreateRequest;
@@ -84,6 +85,7 @@ public class CityHandler {
                 .doOnNext(cmd -> log.info("Mapped to CreateCityCommand: {}", cmd))
                 .flatMap(cmd -> commandUseCase.create(cmd, token)
                         .subscribeOn(Schedulers.fromExecutor(virtualExecutor)))
+                .onErrorMap(DomainExceptionTranslator::translate)  // Translate domain exceptions at boundary
                 .doOnNext(city -> log.info("Service returned City: {}", city))
                 .map(CityDtoMapper::toResponse)  // Map domain model to DTO at infrastructure boundary
                 .map(ResponseHelper::success)
@@ -115,6 +117,7 @@ public class CityHandler {
 
         return getCityUseCase.query(query, token)
                 .subscribeOn(Schedulers.fromExecutor(virtualExecutor))
+                .onErrorMap(DomainExceptionTranslator::translate)  // Translate domain exceptions at boundary
                 .map(CityDtoMapper::toResponse)  // Map domain model to DTO at infrastructure boundary
                 .map(ResponseHelper::success)
                 .flatMap(wrapper -> ServerResponse.ok()
@@ -148,6 +151,7 @@ public class CityHandler {
                 .map(this::toCityFilterQuery) // Map infrastructure DTO to application query
                 .flatMap(cityRequest -> getAllCityUseCase.query(cityRequest, token)
                         .subscribeOn(Schedulers.fromExecutor(virtualExecutor))
+                        .onErrorMap(DomainExceptionTranslator::translate)  // Translate domain exceptions at boundary
                         .map(pageResult -> {
                             // Map domain models to response DTOs
                             List<CityResponse> responseDtos = pageResult.content().stream()

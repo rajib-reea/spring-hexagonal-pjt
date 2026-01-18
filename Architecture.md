@@ -162,16 +162,28 @@ graph TB
 
 ### 2. Infrastructure Layer - REST
 - **CityRouter**: Routes HTTP requests to appropriate handlers using Spring WebFlux functional routing
-- **CityHandler**: Handles HTTP requests, validates input, and orchestrates use cases. Maps requests inline to commands/queries
+- **CityHandler**: Handles HTTP requests, validates input, orchestrates use cases, and translates exceptions. Maps requests inline to commands/queries
 - **Request Objects**:
   - `CityCreateRequest`: Request DTO for creating cities with validation annotations
   - `CityFindAllRequest`: Request DTO for filtering and paginating city queries with support for complex filtering (logical operators AND/OR, filter groups, conditions with EQUALS/LIKE/GT/LT/GTE/LTE operators), sorting, and searching. Mapped to `CityFilterQuery` at infrastructure boundary
-- **ResponseHelper**: Utility class for wrapping responses in SuccessResponseWrapper or PageResponseWrapper
-- **PageResponseWrapper**: Response wrapper for paginated results with metadata (page, size, offset, totalElements, totalPages)
+- **Response Objects**:
+  - `CityResponse`: Response DTO for city data
+  - `ResponseHelper`: Utility class for wrapping responses in SuccessResponseWrapper or PageResponseWrapper
+  - `PageResponseWrapper`: Response wrapper for paginated results with metadata (page, size, offset, totalElements, totalPages)
+  - `SuccessResponseWrapper`: Wrapper for successful responses
+  - `ErrorResponseWrapper`: Wrapper for error responses
+- **Exception Handling (NEW)**:
+  - `DomainExceptionTranslator`: Translates domain exceptions to REST exceptions at infrastructure boundary
+  - `RestApiException`: Base class for REST layer exceptions with HTTP status
+  - `ValidationException`: REST exception for validation errors (HTTP 400)
+  - `DuplicateResourceException`: REST exception for duplicate resource attempts (HTTP 400)
+  - `ExceptionMetadataRegistry`: Maps exception types to HTTP status codes and error details
+  - `GlobalExceptionHandler`: Centralized reactive exception handler implementing `WebExceptionHandler`
+  - `ExceptionDetail`: Record for structured error response details
+- **Mapping**:
+  - `CityDtoMapper`: Maps domain models to/from DTOs at REST boundary
 - **Validator**: Validates incoming request data
-- **Global Exception Handler**: Centralized error handling and response formatting
 - **CitySpec**: OpenAPI specification constants for API documentation, including summaries, descriptions, and examples
-- **Note**: CityMapper exists in the codebase but is currently unused; mapping is done inline in handlers and use cases
 
 ### 3. Application Layer
 - **Ports In (Inbound Ports)**:
@@ -219,6 +231,7 @@ graph TB
 - **Executor Configuration**: Configures thread executors (virtual threads for I/O, platform threads for CPU)
 - **Auditing Configuration**: Configures JPA auditing for created/modified timestamps
 - **Jackson Configuration**: Configures JSON serialization/deserialization
+- **Policy Configuration**: Configures domain policy beans (e.g., `CityPolicy` implementation)
 - **API Documentation Configuration**:
   - `CityGroup`: Configures grouped OpenAPI documentation for City endpoints
   - `GroupedOpenApiProvider`: Interface for creating customized OpenAPI groups with common headers (Authorization, Accept-Language, Currency) and response codes
@@ -226,13 +239,14 @@ graph TB
 ### 7. Data Store
 - **H2 Database**: In-memory database for development and testing
 
-## Data Flow: Create City Example
+## Data Flow: Create City Example (with Exception Translation)
 
 ```mermaid
 sequenceDiagram
     participant C as Client
     participant R as CityRouter
     participant H as CityHandler
+    participant T as DomainExceptionTranslator
     participant Req as CityCreateRequest
     participant S as CreateCityCommandHandler
     participant P as CityPolicy
@@ -241,6 +255,7 @@ sequenceDiagram
     participant Repo as CityRepository
     participant DB as Database
     participant Helper as ResponseHelper
+    participant EH as GlobalExceptionHandler
 
     C->>R: POST /api/v1/city
     R->>H: createCity(request)
@@ -250,22 +265,48 @@ sequenceDiagram
     H->>S: create(command, token)
     S->>City: new City(id, name, state)
     City->>City: Validate domain rules
-    S->>A: findAll(token)
-    A->>Repo: findAll()
-    Repo->>DB: SELECT * FROM city
-    DB-->>Repo: List<CityEntity>
-    Repo-->>A: List<CityEntity>
-    A-->>S: List<City>
-    S->>P: ensureUnique(city, existing)
-    P->>P: Check business rules
-    P-->>S: Validation passed
-    S->>A: save(city, token)
-    A->>A: Map City to CityEntity
-    A->>Repo: save(entity)
-    Repo->>DB: INSERT INTO city
-    DB-->>Repo: CityEntity (with ID)
-    Repo-->>A: CityEntity
-    A->>A: Map CityEntity to City
+    alt Validation Fails
+        City-->>S: InvalidCityNameException (domain)
+        S-->>H: InvalidCityNameException
+        H->>T: translate(exception)
+        T-->>H: ValidationException (REST)
+        H-->>EH: ValidationException
+        EH-->>C: 400 Bad Request
+    else Validation Passes
+        S->>A: findAll(token)
+        A->>Repo: findAll()
+        Repo->>DB: SELECT * FROM city
+        DB-->>Repo: List<CityEntity>
+        Repo-->>A: List<CityEntity>
+        A-->>S: List<City>
+        S->>P: ensureUnique(city, existing)
+        P->>P: Check business rules
+        alt Duplicate Found
+            P-->>S: DuplicateCityException (domain)
+            S-->>H: DuplicateCityException
+            H->>T: translate(exception)
+            T-->>H: DuplicateResourceException (REST)
+            H-->>EH: DuplicateResourceException
+            EH-->>C: 400 Bad Request
+        else Unique City
+            P-->>S: Validation passed
+            S->>A: save(city, token)
+            A->>A: Map City to CityEntity
+            A->>Repo: save(entity)
+            Repo->>DB: INSERT INTO city
+            DB-->>Repo: CityEntity (with ID)
+            Repo-->>A: CityEntity
+            A->>A: Map CityEntity to City
+            A-->>S: City (saved)
+            S-->>H: City (domain model)
+            H->>H: Map City to CityResponse (CityDtoMapper)
+            H->>Helper: success(CityResponse)
+            Helper-->>H: SuccessResponseWrapper
+            H-->>R: ServerResponse
+            R-->>C: HTTP 200 OK
+        end
+    end
+```
     A-->>S: City (saved)
     S->>S: Map City to CityResponse
     S-->>H: CityResponse
@@ -385,9 +426,10 @@ sequenceDiagram
 1. **Ports and Adapters**: Clear separation between business logic and infrastructure
 2. **Command Query Responsibility Segregation (CQRS)**: Separate commands and queries
 3. **Repository Pattern**: Abstract data access through repositories
-4. **Mapper Pattern**: Transform between layers using dedicated mappers
+4. **Mapper Pattern**: Transform between layers using dedicated mappers (CityDtoMapper, CityMapper)
 5. **Specification Pattern**: Encapsulate business rules in reusable specifications
-6. **Policy Pattern**: Enforce business policies independently
+6. **Policy Pattern**: Enforce business policies independently (CityPolicy, CityPolicyEnforcer)
+7. **Anti-Corruption Layer (NEW)**: Exception translation at infrastructure boundaries to isolate domain from external concerns (DomainExceptionTranslator)
 
 ### Technology Stack
 - **Framework**: Spring Boot 4.0.1 with WebFlux (reactive)
@@ -448,13 +490,17 @@ src/main/java/com/csio/hexagonal/
     │   └── PolicyConfig.java               # Spring bean configuration for domain policies
     ├── rest/
     │   ├── exception/
+    │   │   ├── DomainExceptionTranslator.java   # NEW: Translates domain exceptions to REST exceptions
+    │   │   ├── RestApiException.java            # NEW: Base REST exception with HTTP status
+    │   │   ├── ValidationException.java         # NEW: REST validation exception
+    │   │   ├── DuplicateResourceException.java  # NEW: REST duplicate resource exception
     │   │   ├── ExceptionDetail.java
     │   │   ├── ExceptionMetadataRegistry.java
-    │   │   └── GlobalExceptionHandler.java
+    │   │   └── GlobalExceptionHandler.java      # Enhanced: Reactive exception handler
     │   ├── handler/
-    │   │   └── CityHandler.java          # HTTP handler (maps DTOs to/from domain)
+    │   │   └── CityHandler.java          # HTTP handler (maps DTOs to/from domain, translates exceptions)
     │   ├── mapper/
-    │   │   └── CityDtoMapper.java         # Maps domain models to/from DTOs
+    │   │   └── CityDtoMapper.java         # Maps domain models to/from DTOs at REST boundary
     │   ├── request/
     │   │   ├── CityCreateRequest.java    # Create city request DTO
     │   │   └── CityFindAllRequest.java   # Find all cities request DTO with filtering
@@ -517,3 +563,5 @@ The architecture supports multiple testing levels:
 4. **Domain Focus**: Business logic is isolated and protected
 5. **Technology Independence**: Domain doesn't depend on frameworks
 6. **Scalability**: Reactive stack with proper thread management
+7. **Exception Isolation (NEW)**: Domain exceptions are translated at infrastructure boundaries, maintaining clean separation
+8. **Consistent Error Handling (NEW)**: Structured error responses with HTTP-aware exception hierarchy

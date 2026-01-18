@@ -351,15 +351,103 @@ public class CityHandler {
         // 1. Extract and validate request
         // 2. Map to command
         // 3. Execute use case
-        // 4. Map domain model to DTO at boundary
-        // 5. Return HTTP response
+        // 4. Translate domain exceptions to REST exceptions at boundary
+        // 5. Map domain model to DTO at boundary
+        // 6. Return HTTP response
     }
     
     public Mono<ServerResponse> getAllCity(ServerRequest request) {
         // 1. Map CityFindAllRequest to CityFilterQuery at boundary
         // 2. Execute query use case
-        // 3. Map domain PageResult<City> to PageResponseWrapper<CityResponse>
-        // 4. Return HTTP response
+        // 3. Translate domain exceptions to REST exceptions
+        // 4. Map domain PageResult<City> to PageResponseWrapper<CityResponse>
+        // 5. Return HTTP response
+    }
+}
+```
+
+#### Exception Handling (NEW)
+
+**Exception Translation at Infrastructure Boundary:**
+
+```java
+// DomainExceptionTranslator.java - Translates domain exceptions to REST exceptions
+public final class DomainExceptionTranslator {
+    
+    public static RestApiException translate(Throwable domainException) {
+        if (domainException instanceof DuplicateCityException) {
+            return new DuplicateResourceException(domainException.getMessage(), domainException);
+        } else if (domainException instanceof InvalidCityNameException) {
+            return new ValidationException(domainException.getMessage(), domainException);
+        } else if (domainException instanceof InvalidStateNameException) {
+            return new ValidationException(domainException.getMessage(), domainException);
+        }
+        
+        // If already a REST exception, return as-is
+        if (domainException instanceof RestApiException) {
+            return (RestApiException) domainException;
+        }
+        
+        // Unknown exception - let it propagate
+        throw new RuntimeException(domainException);
+    }
+}
+
+// RestApiException.java - Base REST exception hierarchy
+public class RestApiException extends RuntimeException {
+    private final HttpStatus status;
+    
+    public RestApiException(HttpStatus status, String message) {
+        super(message);
+        this.status = status;
+    }
+}
+
+// Usage in CityHandler
+public Mono<ServerResponse> createCity(ServerRequest request) {
+    String token = request.headers().firstHeader("Authorization");
+    return request.bodyToMono(CityCreateRequest.class)
+            .map(req -> new CreateCityCommand(req.name(), req.state()))
+            .flatMap(cmd -> commandUseCase.create(cmd, token))
+            .onErrorMap(DomainExceptionTranslator::translate)  // ✅ Exception translation
+            .map(CityDtoMapper::toResponse)
+            .map(ResponseHelper::success)
+            .flatMap(wrapper -> ServerResponse.ok().bodyValue(wrapper));
+}
+```
+
+**GlobalExceptionHandler:**
+
+```java
+@Component
+@Order(Ordered.HIGHEST_PRECEDENCE)
+public class GlobalExceptionHandler implements WebExceptionHandler {
+    
+    private final ObjectMapper objectMapper;
+    
+    @Override
+    public Mono<Void> handle(ServerWebExchange exchange, Throwable ex) {
+        ExceptionMetadataRegistry.ExceptionMetadata metadata = 
+            ExceptionMetadataRegistry.getMetadata(ex);
+        
+        ExceptionDetail detail = new ExceptionDetail(
+            exchange.getRequest().getPath().value(),
+            metadata.errorTitle(),
+            ex.getMessage() != null ? ex.getMessage() : ex.getClass().getSimpleName(),
+            Instant.now()
+        );
+        
+        ErrorResponseWrapper wrapper = new ErrorResponseWrapper(
+            metadata.status().value(), 
+            detail
+        );
+        
+        exchange.getResponse().setStatusCode(metadata.status());
+        exchange.getResponse().getHeaders().setContentType(MediaType.APPLICATION_JSON);
+        
+        byte[] bytes = objectMapper.writeValueAsBytes(wrapper);
+        return exchange.getResponse()
+                .writeWith(Mono.just(exchange.getResponse().bufferFactory().wrap(bytes)));
     }
 }
 ```
@@ -637,18 +725,20 @@ Searches across multiple fields:
 
 ## 🔄 Data Flow Examples
 
-### Example 1: Create City Flow
+### Example 1: Create City Flow (with Exception Translation)
 
 ```mermaid
 sequenceDiagram
     participant Client
     participant Router
     participant Handler
+    participant Translator as DomainExceptionTranslator
     participant CommandHandler
     participant CityPolicy
     participant City
     participant Adapter
     participant Database
+    participant ExceptionHandler as GlobalExceptionHandler
 
     Client->>Router: POST /api/v1/city
     Router->>Handler: createCity(request)
@@ -656,18 +746,37 @@ sequenceDiagram
     Handler->>CommandHandler: create(command)
     CommandHandler->>City: new City(name, state)
     City->>City: Validate domain rules
-    CommandHandler->>Adapter: findAll() [Check duplicates]
-    Adapter->>Database: SELECT * FROM city
-    Database-->>Adapter: List<CityEntity>
-    Adapter-->>CommandHandler: List<City>
-    CommandHandler->>CityPolicy: ensureUnique(city, existing)
-    CityPolicy-->>CommandHandler: ✓ Validation passed
-    CommandHandler->>Adapter: save(city)
-    Adapter->>Database: INSERT INTO city
-    Database-->>Adapter: CityEntity (saved)
-    Adapter-->>CommandHandler: City
-    CommandHandler-->>Handler: CityResponse
-    Handler-->>Client: 200 OK + Response
+    alt validation fails
+        City-->>CommandHandler: InvalidCityNameException
+        CommandHandler-->>Handler: InvalidCityNameException
+        Handler->>Translator: translate(exception)
+        Translator-->>Handler: ValidationException
+        Handler-->>ExceptionHandler: ValidationException
+        ExceptionHandler-->>Client: 400 Bad Request
+    else validation passes
+        CommandHandler->>Adapter: findAll() [Check duplicates]
+        Adapter->>Database: SELECT * FROM city
+        Database-->>Adapter: List<CityEntity>
+        Adapter-->>CommandHandler: List<City>
+        CommandHandler->>CityPolicy: ensureUnique(city, existing)
+        alt duplicate found
+            CityPolicy-->>CommandHandler: DuplicateCityException
+            CommandHandler-->>Handler: DuplicateCityException
+            Handler->>Translator: translate(exception)
+            Translator-->>Handler: DuplicateResourceException
+            Handler-->>ExceptionHandler: DuplicateResourceException
+            ExceptionHandler-->>Client: 400 Bad Request
+        else unique city
+            CityPolicy-->>CommandHandler: ✓ Validation passed
+            CommandHandler->>Adapter: save(city)
+            Adapter->>Database: INSERT INTO city
+            Database-->>Adapter: CityEntity (saved)
+            Adapter-->>CommandHandler: City
+            CommandHandler-->>Handler: City (domain model)
+            Handler->>Handler: Map City to CityResponse
+            Handler-->>Client: 200 OK + Response
+        end
+    end
 ```
 
 ### Example 2: Get All Cities with Filtering
@@ -809,18 +918,36 @@ Content-Type: application/json
 }
 ```
 
-### Error Responses
+### Error Responses (with Exception Translation)
 
+**Validation Error:**
 ```json
 {
-  "status": "error",
+  "status": 400,
   "error": {
-    "code": "DUPLICATE_CITY",
-    "message": "City with name 'San Francisco' already exists",
-    "timestamp": "2026-01-08T07:30:00Z"
+    "type": "VALIDATION_ERROR",
+    "title": "Validation Failed",
+    "message": "City name cannot be blank",
+    "timestamp": "2026-01-18T14:30:00Z"
   }
 }
 ```
+
+**Duplicate Resource Error:**
+```json
+{
+  "status": 400,
+  "error": {
+    "type": "DUPLICATE_RESOURCE",
+    "title": "Duplicate Resource",
+    "message": "City with name 'San Francisco' already exists",
+    "timestamp": "2026-01-18T14:30:00Z"
+  }
+}
+```
+
+**Exception Translation Flow:**
+- Domain exceptions (`DuplicateCityException`, `InvalidCityNameException`) → Translated at boundary → REST exceptions (`DuplicateResourceException`, `ValidationException`) → Handled by `GlobalExceptionHandler` → Structured error response
 
 ---
 
@@ -858,6 +985,13 @@ Content-Type: application/json
 ### 8. Mapper Pattern
 - Transforms between layers
 - `CityMapper` for domain ↔ persistence mapping
+- `CityDtoMapper` for domain ↔ DTO mapping at REST boundary
+
+### 9. Anti-Corruption Layer Pattern (NEW)
+- **Exception Translation**: `DomainExceptionTranslator` translates domain exceptions to REST exceptions at infrastructure boundary
+- **Domain Isolation**: Domain exceptions remain in domain layer
+- **Adapter Responsibility**: Infrastructure adapters translate domain concepts for external consumers
+- **Example**: `DuplicateCityException` (domain) → `DuplicateResourceException` (REST) → HTTP 400 response
 
 ---
 

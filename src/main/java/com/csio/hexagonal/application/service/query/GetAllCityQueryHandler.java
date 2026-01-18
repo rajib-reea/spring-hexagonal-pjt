@@ -1,10 +1,10 @@
 package com.csio.hexagonal.application.service.query;
 
-import com.csio.hexagonal.application.dto.CityQueryRequest;
 import com.csio.hexagonal.application.dto.PageResult;
 import com.csio.hexagonal.application.port.in.QueryUseCase;
 import com.csio.hexagonal.application.port.out.CityServiceContract;
 import com.csio.hexagonal.domain.model.City;
+import com.csio.hexagonal.infrastructure.rest.request.CityFindAllRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -14,7 +14,7 @@ import java.util.concurrent.Executor;
 
 @Service
 public class GetAllCityQueryHandler
-        implements  QueryUseCase<CityQueryRequest, PageResult<City>> {
+        implements  QueryUseCase<CityFindAllRequest, PageResult<City>> {
 
     private static final Logger log =
             LoggerFactory.getLogger(GetAllCityQueryHandler.class);
@@ -31,7 +31,7 @@ public class GetAllCityQueryHandler
     }
 
     @Override
-    public Mono<PageResult<City>> query(CityQueryRequest request, String token) {
+    public Mono<PageResult<City>> query(CityFindAllRequest request, String token) {
 
         boolean hasFilters = request.filter() != null
                 && request.filter().filterGroups() != null
@@ -58,7 +58,7 @@ public class GetAllCityQueryHandler
      * "field,direction;field,direction" format for pagination API.
      * Supports multiple sort orders.
      */
-    private String buildSortString(CityQueryRequest request) {
+    private String buildSortString(CityFindAllRequest request) {
         if (request.sort() == null || request.sort().isEmpty()) {
             return "name,asc"; // default
         }

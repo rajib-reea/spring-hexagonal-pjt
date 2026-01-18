@@ -1,3 +1,7 @@
+
+//By default, Spring Boot expects one database. It automatically configures a DataSource and EntityManager for you. 
+//However, if your application needs to connect to two or more databases (e.g., an Oracle DB for legacy user data and a PostgreSQL DB for new transactions), Spring gets confused.
+
 package com.csio.hexagonal.infrastructure.config;
 
 import com.zaxxer.hikari.HikariDataSource;

@@ -1,8 +1,8 @@
 package com.csio.hexagonal.infrastructure.store.persistence.adapter;
 
 /**
- * Small record pairing a procedure parameter definition (enum) with a value for the call.
- * Example usage:
- *   new ParamValue(ExampleProcParam.IN_PARAM, "foo")
+ * A small record pairing a StoredProcedureParam (enum constant) with its runtime value.
+ * Usage:
+ *   new ParamValue(ExampleProcParam.IN_SEARCH, "foo")
  */
-public record ParamValue(ExampleProcParam param, Object value) { }
+public record ParamValue(StoredProcedureParam param, Object value) { }

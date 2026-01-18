@@ -1,6 +1,6 @@
 package com.csio.hexagonal.infrastructure.rest.mapper;
 
-import com.csio.hexagonal.application.dto.PageResult;
+import com.csio.hexagonal.domain.vo.PageResult;
 import com.csio.hexagonal.domain.model.City;
 import com.csio.hexagonal.infrastructure.rest.response.city.CityResponse;
 import com.csio.hexagonal.infrastructure.rest.response.wrapper.PageResponseWrapper;

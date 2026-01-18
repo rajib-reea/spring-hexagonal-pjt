@@ -1,6 +1,6 @@
 package com.csio.hexagonal.infrastructure.rest.handler;
 
-import com.csio.hexagonal.application.dto.PageResult;
+import com.csio.hexagonal.domain.vo.PageResult;
 import com.csio.hexagonal.application.port.in.CommandUseCase;
 import com.csio.hexagonal.application.port.in.QueryUseCase;
 import com.csio.hexagonal.application.service.command.CreateCityCommand;

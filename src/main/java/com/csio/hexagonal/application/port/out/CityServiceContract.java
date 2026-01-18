@@ -1,6 +1,6 @@
 package com.csio.hexagonal.application.port.out;
 
-import com.csio.hexagonal.application.dto.PageResult;
+import com.csio.hexagonal.domain.vo.PageResult;
 import com.csio.hexagonal.domain.model.City;
 import com.csio.hexagonal.infrastructure.rest.request.CityFindAllRequest;
 import java.util.UUID;

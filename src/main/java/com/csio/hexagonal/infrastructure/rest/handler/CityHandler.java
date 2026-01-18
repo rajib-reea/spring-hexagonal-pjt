@@ -1,6 +1,5 @@
 package com.csio.hexagonal.infrastructure.rest.handler;
 
-import com.csio.hexagonal.application.dto.CityQueryRequest;
 import com.csio.hexagonal.application.dto.PageResult;
 import com.csio.hexagonal.application.port.in.CommandUseCase;
 import com.csio.hexagonal.application.port.in.QueryUseCase;
@@ -42,13 +41,13 @@ public class CityHandler {
 
     private final CommandUseCase<CreateCityCommand, City> commandUseCase;
     private final QueryUseCase<GetCityQuery, City> getCityUseCase;
-    private final QueryUseCase<CityQueryRequest, PageResult<City>> getAllCityUseCase;
+    private final QueryUseCase<CityFindAllRequest, PageResult<City>> getAllCityUseCase;
     private final Executor virtualExecutor;
 
     public CityHandler(
             CommandUseCase<CreateCityCommand, City> commandUseCase,
             QueryUseCase<GetCityQuery, City> getCityUseCase,
-            QueryUseCase<CityQueryRequest, PageResult<City>> getAllCityUseCase,
+            QueryUseCase<CityFindAllRequest, PageResult<City>> getAllCityUseCase,
             @Qualifier("virtualExecutor") Executor virtualExecutor
     ) {
         this.commandUseCase = commandUseCase;
@@ -145,8 +144,7 @@ public class CityHandler {
         String token = request.headers().firstHeader("Authorization");
 
         return request.bodyToMono(CityFindAllRequest.class)
-                .map(CityDtoMapper::toApplicationRequest)  // Convert infrastructure DTO to application DTO
-                .flatMap(appRequest -> getAllCityUseCase.query(appRequest, token)
+                .flatMap(cityRequest -> getAllCityUseCase.query(cityRequest, token)
                         .subscribeOn(Schedulers.fromExecutor(virtualExecutor))
                         .map(pageResult -> {
                             // Map domain models to response DTOs

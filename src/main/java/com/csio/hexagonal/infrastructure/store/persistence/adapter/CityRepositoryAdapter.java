@@ -1,9 +1,9 @@
 package com.csio.hexagonal.infrastructure.store.persistence.adapter;
 
-import com.csio.hexagonal.application.dto.CityQueryRequest;
 import com.csio.hexagonal.application.dto.PageResult;
 import com.csio.hexagonal.application.port.out.CityServiceContract;
 import com.csio.hexagonal.domain.model.City;
+import com.csio.hexagonal.infrastructure.rest.request.CityFindAllRequest;
 import com.csio.hexagonal.infrastructure.store.persistence.entity.CityEntity;
 import com.csio.hexagonal.infrastructure.store.persistence.exception.DatabaseException;
 import com.csio.hexagonal.infrastructure.store.persistence.mapper.CityMapper;
@@ -127,23 +127,15 @@ public class CityRepositoryAdapter implements CityServiceContract {
     }
 
     @Override
-    public PageResult<City> findAllWithFilters(CityQueryRequest request, String token) {
+    public PageResult<City> findAllWithFilters(CityFindAllRequest request, String token) {
         try {
             // Build sort object for pageable
             Sort sortObj = buildSortObject(request.sort());
             PageRequest pageable = PageRequest.of(request.page()-1, request.size(), sortObj);
             
-            // Convert application filter to infrastructure filter for JPA
-            CityQueryRequest.FilterCriteria appFilter = request.filter();
-            com.csio.hexagonal.infrastructure.rest.request.CityFindAllRequest.Filter infraFilter = null;
-            
-            if (appFilter != null) {
-                infraFilter = convertToInfraFilter(appFilter);
-            }
-            
             // Build Specification using the filter
             Specification<CityEntity> spec = CitySpecification.buildSpecification(
-                    request.search(), infraFilter
+                    request.search(), request.filter()
             );
             
             Page<CityEntity> pageResult = repo.findAll(spec, pageable);
@@ -183,84 +175,24 @@ public class CityRepositoryAdapter implements CityServiceContract {
         }
     }
 
-    private Sort buildSortObject(List<CityQueryRequest.SortOrder> sortOrders) {
+    private Sort buildSortObject(List<CityFindAllRequest.SortOrder> sortOrders) {
         if (sortOrders == null || sortOrders.isEmpty()) {
             return Sort.by("name").ascending();
         }
 
         Sort sort = Sort.by(sortOrders.get(0).field());
-        sort = sortOrders.get(0).direction() == CityQueryRequest.Direction.DESC
+        sort = sortOrders.get(0).direction() == CityFindAllRequest.Direction.DESC
                 ? sort.descending()
                 : sort.ascending();
 
         for (int i = 1; i < sortOrders.size(); i++) {
-            CityQueryRequest.SortOrder so = sortOrders.get(i);
-            sort = sort.and(so.direction() == CityQueryRequest.Direction.DESC
+            CityFindAllRequest.SortOrder so = sortOrders.get(i);
+            sort = sort.and(so.direction() == CityFindAllRequest.Direction.DESC
                     ? Sort.by(so.field()).descending()
                     : Sort.by(so.field()).ascending());
         }
 
         return sort;
-    }
-    
-    /**
-     * Converts application-layer filter to infrastructure-layer filter
-     */
-    private com.csio.hexagonal.infrastructure.rest.request.CityFindAllRequest.Filter convertToInfraFilter(
-            CityQueryRequest.FilterCriteria appFilter) {
-        
-        if (appFilter == null || appFilter.filterGroups() == null) {
-            return null;
-        }
-        
-        List<com.csio.hexagonal.infrastructure.rest.request.CityFindAllRequest.FilterGroup> infraFilterGroups = 
-                appFilter.filterGroups().stream()
-                    .map(this::convertFilterGroup)
-                    .toList();
-        
-        com.csio.hexagonal.infrastructure.rest.request.CityFindAllRequest.LogicalOperator infraOp = 
-                com.csio.hexagonal.infrastructure.rest.request.CityFindAllRequest.LogicalOperator.valueOf(
-                        appFilter.operator().name()
-                );
-        
-        return new com.csio.hexagonal.infrastructure.rest.request.CityFindAllRequest.Filter(
-                infraOp,
-                infraFilterGroups
-        );
-    }
-    
-    private com.csio.hexagonal.infrastructure.rest.request.CityFindAllRequest.FilterGroup convertFilterGroup(
-            CityQueryRequest.FilterGroup appGroup) {
-        
-        List<com.csio.hexagonal.infrastructure.rest.request.CityFindAllRequest.FilterCondition> infraConditions =
-                appGroup.conditions().stream()
-                    .map(this::convertFilterCondition)
-                    .toList();
-        
-        com.csio.hexagonal.infrastructure.rest.request.CityFindAllRequest.LogicalOperator infraOp = 
-                com.csio.hexagonal.infrastructure.rest.request.CityFindAllRequest.LogicalOperator.valueOf(
-                        appGroup.operator().name()
-                );
-        
-        return new com.csio.hexagonal.infrastructure.rest.request.CityFindAllRequest.FilterGroup(
-                infraOp,
-                infraConditions
-        );
-    }
-    
-    private com.csio.hexagonal.infrastructure.rest.request.CityFindAllRequest.FilterCondition convertFilterCondition(
-            CityQueryRequest.FilterCondition appCondition) {
-        
-        com.csio.hexagonal.infrastructure.rest.request.CityFindAllRequest.Operator infraOp = 
-                com.csio.hexagonal.infrastructure.rest.request.CityFindAllRequest.Operator.valueOf(
-                        appCondition.operator().name()
-                );
-        
-        return new com.csio.hexagonal.infrastructure.rest.request.CityFindAllRequest.FilterCondition(
-                appCondition.field(),
-                infraOp,
-                appCondition.value()
-        );
     }
 
 }

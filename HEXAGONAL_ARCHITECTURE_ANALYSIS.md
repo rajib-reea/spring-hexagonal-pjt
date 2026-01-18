@@ -19,7 +19,7 @@
 **Impact:**
 - Domain layer can now be tested in complete isolation
 - Domain code can be reused in non-Spring applications
-- Improved hexagonal architecture adherence score from 7.0/10 to 7.8/10
+- Improved hexagonal architecture adherence score from 7.5/10 to 7.8/10
 - Domain layer score improved from 7/10 to 9/10
 
 ---

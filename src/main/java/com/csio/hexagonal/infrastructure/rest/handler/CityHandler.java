@@ -203,9 +203,10 @@ public class CityHandler {
     private CityFilterQuery.FilterGroup mapFilterGroup(CityFindAllRequest.FilterGroup group) {
         return new CityFilterQuery.FilterGroup(
                 CityFilterQuery.LogicalOperator.valueOf(group.operator().name()),
-                group.conditions().stream()
-                        .map(this::mapFilterCondition)
-                        .toList()
+                group.conditions() == null ? null :
+                        group.conditions().stream()
+                                .map(this::mapFilterCondition)
+                                .toList()
         );
     }
 

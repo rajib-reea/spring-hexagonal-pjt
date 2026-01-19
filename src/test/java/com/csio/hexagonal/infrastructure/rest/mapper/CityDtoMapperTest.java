@@ -67,7 +67,8 @@ class CityDtoMapperTest {
 
         // Assert
         assertNotNull(wrapper);
-        assertEquals(200, wrapper.status());
+        assertTrue(wrapper.success());
+        assertEquals(200, wrapper.statusCode());
         assertEquals(1, wrapper.meta().page());
         assertEquals(10, wrapper.meta().size());
         assertEquals(0L, wrapper.meta().offset());
@@ -87,7 +88,8 @@ class CityDtoMapperTest {
 
         // Assert
         assertNotNull(wrapper);
-        assertEquals(200, wrapper.status());
+        assertTrue(wrapper.success());
+        assertEquals(200, wrapper.statusCode());
         assertEquals(0L, wrapper.meta().totalElements());
         assertEquals(0, wrapper.meta().totalPages());
         assertTrue(wrapper.data().isEmpty());

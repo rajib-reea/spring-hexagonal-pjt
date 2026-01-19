@@ -117,7 +117,8 @@ class CityServiceE2ETest {
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody()
-                .jsonPath("$.status").isEqualTo(200)
+                .jsonPath("$.success").isEqualTo(true)
+                .jsonPath("$.statusCode").isEqualTo(200)
                 .jsonPath("$.data.name").isEqualTo("Indianapolis")
                 .jsonPath("$.data.state").isEqualTo("IN");
     }
@@ -147,7 +148,8 @@ class CityServiceE2ETest {
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody()
-                .jsonPath("$.status").isEqualTo(200)
+                .jsonPath("$.success").isEqualTo(true)
+                .jsonPath("$.statusCode").isEqualTo(200)
                 .jsonPath("$.meta.totalElements").isEqualTo(1)
                 .jsonPath("$.data[0].name").isEqualTo("Fort Worth");
     }

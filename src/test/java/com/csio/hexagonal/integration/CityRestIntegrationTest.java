@@ -329,9 +329,9 @@ class CityRestIntegrationTest {
     }
 
     // Helper method to extract city ID from response
+    // TODO: Improve ID extraction using JsonPath or proper response deserialization
+    // Current implementation uses a workaround approach
     private String extractCityId(SuccessResponseWrapper<?> response) {
-        // This is a simplified extraction - in real scenario, you'd parse the JSON properly
-        // For now, we'll use a workaround
         Object data = response.data();
         if (data instanceof java.util.Map) {
             @SuppressWarnings("unchecked")
@@ -341,7 +341,8 @@ class CityRestIntegrationTest {
                 return id.toString();
             }
         }
-        // Fallback: generate a new UUID for testing
+        // Fallback: If extraction fails, use a placeholder
+        // Note: This makes the test less reliable and should be improved
         return UUID.randomUUID().toString();
     }
 }

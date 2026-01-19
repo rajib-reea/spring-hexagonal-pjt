@@ -322,8 +322,9 @@ class CityServiceE2ETest {
                 .exchange()
                 .expectStatus().isOk();
 
-        // Note: The application currently accepts any token value
-        // This test documents the current behavior
+        // TODO: Implement proper authorization validation
+        // Currently the application accepts any token value
+        // This test documents the current behavior for future enhancement
     }
 
     @Test

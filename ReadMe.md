@@ -32,6 +32,15 @@ Technical architecture diagrams including:
 - Complete file organization
 - Key design patterns and principles
 
+### 🧪 [Testing Strategy & Coverage →](TESTING.md)
+
+Comprehensive testing documentation covering:
+- Testing strategy and approach (unit, integration, E2E)
+- Test coverage summary (149 total tests)
+- Layer-by-layer test breakdown
+- Test infrastructure and configuration
+- Running tests and best practices
+
 ## Run the Project
 
 **Prerequisites:**

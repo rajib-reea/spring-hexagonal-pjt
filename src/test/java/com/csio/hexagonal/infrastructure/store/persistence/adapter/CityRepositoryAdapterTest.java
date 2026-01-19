@@ -10,6 +10,7 @@ import com.csio.hexagonal.infrastructure.store.persistence.exception.DatabaseExc
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataAccessException;
@@ -241,9 +242,10 @@ class CityRepositoryAdapterTest {
         Page<CityEntity> page = new PageImpl<>(Arrays.asList(entity), 
                 PageRequest.of(0, 10), 1);
 
-        @SuppressWarnings("unchecked")
-        Specification<CityEntity> anySpec = any(Specification.class);
-        when(repository.findAll(anySpec, any(Pageable.class))).thenReturn(page);
+        when(repository.findAll(
+                ArgumentMatchers.<Specification<CityEntity>>any(),
+                any(Pageable.class)
+        )).thenReturn(page);
 
         // Act
         PageResult<City> result = adapter.findAllWithFilters(query, token);

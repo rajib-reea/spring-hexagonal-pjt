@@ -52,10 +52,11 @@ public class OracleJpaProcedureAdapter extends AbstractStoredProcedureCaller imp
      * If OUT_CURSOR was defined with Void.class, you'll often receive List<Object[]>.
      * The calling code can inspect the returned Map and convert results accordingly.
      */
-    @SuppressWarnings("unchecked")
     public List<?> extractCursor(Map<String, Object> outputs, String cursorParamName) {
         Object cursor = outputs.get(cursorParamName);
-        if (cursor instanceof List<?> list) return list;
+        if (cursor instanceof List<?> list) {
+            return list;
+        }
         return List.of();
     }
 }

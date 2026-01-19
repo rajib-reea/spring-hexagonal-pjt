@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.ApplicationContext;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.reactive.server.WebTestClient;
@@ -128,7 +129,6 @@ class CityRestIntegrationTest {
         // Arrange - Create a city first
         CityCreateRequest createRequest = new CityCreateRequest("Boston", "MA");
         
-        @SuppressWarnings("unchecked")
         SuccessResponseWrapper<CityResponse> createResponse = webTestClient.post()
                 .uri(CITY_BASE_PATH)
                 .header("Authorization", AUTH_TOKEN)
@@ -136,7 +136,7 @@ class CityRestIntegrationTest {
                 .body(BodyInserters.fromValue(createRequest))
                 .exchange()
                 .expectStatus().isOk()
-                .expectBody(SuccessResponseWrapper.class)
+                .expectBody(new ParameterizedTypeReference<SuccessResponseWrapper<CityResponse>>() {})
                 .returnResult()
                 .getResponseBody();
 
@@ -345,15 +345,20 @@ class CityRestIntegrationTest {
     // Current implementation uses a workaround approach
     private String extractCityId(SuccessResponseWrapper<?> response) {
         Object data = response.data();
-        if (data instanceof java.util.Map) {
-            @SuppressWarnings("unchecked")
-            java.util.Map<String, Object> map = (java.util.Map<String, Object>) data;
+        
+        // Handle properly deserialized CityResponse
+        if (data instanceof CityResponse cityResponse) {
+            return cityResponse.uid();
+        }
+        
+        // Handle legacy Map-based deserialization
+        if (data instanceof java.util.Map<?, ?> rawMap) {
             // Try "uid" first, then "id" as fallback
-            Object uid = map.get("uid");
+            Object uid = rawMap.get("uid");
             if (uid != null) {
                 return uid.toString();
             }
-            Object id = map.get("id");
+            Object id = rawMap.get("id");
             if (id != null) {
                 return id.toString();
             }

@@ -241,9 +241,7 @@ class CityRepositoryAdapterTest {
         Page<CityEntity> page = new PageImpl<>(Arrays.asList(entity), 
                 PageRequest.of(0, 10), 1);
 
-        @SuppressWarnings("unchecked")
-        Specification<CityEntity> anySpec = any(Specification.class);
-        when(repository.findAll(anySpec, any(Pageable.class))).thenReturn(page);
+        when(repository.findAll(org.mockito.ArgumentMatchers.<Specification<CityEntity>>any(), any(Pageable.class))).thenReturn(page);
 
         // Act
         PageResult<City> result = adapter.findAllWithFilters(query, token);

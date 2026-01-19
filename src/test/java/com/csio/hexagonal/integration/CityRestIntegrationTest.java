@@ -128,6 +128,7 @@ class CityRestIntegrationTest {
         // Arrange - Create a city first
         CityCreateRequest createRequest = new CityCreateRequest("Boston", "MA");
         
+        @SuppressWarnings("unchecked")
         SuccessResponseWrapper<CityResponse> createResponse = webTestClient.post()
                 .uri(CITY_BASE_PATH)
                 .header("Authorization", AUTH_TOKEN)

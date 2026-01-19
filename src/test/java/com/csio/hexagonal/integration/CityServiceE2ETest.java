@@ -17,6 +17,7 @@ import org.springframework.web.reactive.function.BodyInserters;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -103,6 +104,7 @@ class CityServiceE2ETest {
     void shouldRetrieveCityFromDatabaseViaApi() {
         // Arrange - Create city directly in database
         CityEntity entity = new CityEntity();
+        entity.setUid(UUID.randomUUID().toString());
         entity.setName("Indianapolis");
         entity.setState("IN");
         entity.setIsActive(true);
@@ -115,7 +117,7 @@ class CityServiceE2ETest {
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody()
-                .jsonPath("$.status").isEqualTo("success")
+                .jsonPath("$.status").isEqualTo(200)
                 .jsonPath("$.data.name").isEqualTo("Indianapolis")
                 .jsonPath("$.data.state").isEqualTo("IN");
     }
@@ -145,7 +147,7 @@ class CityServiceE2ETest {
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody()
-                .jsonPath("$.status").isEqualTo("success")
+                .jsonPath("$.status").isEqualTo(200)
                 .jsonPath("$.meta.totalElements").isEqualTo(1)
                 .jsonPath("$.data[0].name").isEqualTo("Fort Worth");
     }
@@ -386,6 +388,7 @@ class CityServiceE2ETest {
     // Helper method to create and save city entity
     private void createAndSaveCityEntity(String name, String state) {
         CityEntity entity = new CityEntity();
+        entity.setUid(UUID.randomUUID().toString());
         entity.setName(name);
         entity.setState(state);
         entity.setIsActive(true);

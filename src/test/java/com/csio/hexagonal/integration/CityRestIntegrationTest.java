@@ -351,14 +351,14 @@ class CityRestIntegrationTest {
             return cityResponse.uid();
         }
         
-        // Handle legacy Map-based deserialization
-        if (data instanceof java.util.Map<?, ?> rawMap) {
+        // Handle legacy Map-based deserialization (using wildcard to avoid type safety issues)
+        if (data instanceof java.util.Map<?, ?> map) {
             // Try "uid" first, then "id" as fallback
-            Object uid = rawMap.get("uid");
+            Object uid = map.get("uid");
             if (uid != null) {
                 return uid.toString();
             }
-            Object id = rawMap.get("id");
+            Object id = map.get("id");
             if (id != null) {
                 return id.toString();
             }

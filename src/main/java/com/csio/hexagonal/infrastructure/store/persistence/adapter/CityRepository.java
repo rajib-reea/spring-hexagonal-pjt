@@ -10,7 +10,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.Optional;
 
-public interface CityRepository extends JpaRepository<CityEntity, String>, 
+public interface CityRepository extends JpaRepository<CityEntity, Long>, 
         JpaSpecificationExecutor<CityEntity> {  // ✅ Add Specification support
 
     // Find by UID since it's not the primary key

@@ -122,4 +122,8 @@ public abstract class AuditableEntity implements Serializable, Activatable {
     public Long getId() {
         return this.id;
     }
+    
+    public void setId(Long id) {
+        this.id = id;
+    }
 }

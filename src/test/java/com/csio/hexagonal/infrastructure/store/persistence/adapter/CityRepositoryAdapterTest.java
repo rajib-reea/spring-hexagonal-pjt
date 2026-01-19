@@ -166,7 +166,16 @@ class CityRepositoryAdapterTest {
         City city = new City(new CityId(uuid), "New York", new State("NY"));
         String token = "test-token";
 
+        CityEntity existingEntity = new CityEntity();
+        existingEntity.setId(1L);
+        existingEntity.setUid(uuid.toString());
+        existingEntity.setName("Old Name");
+        existingEntity.setState("NY");
+        
         CityEntity savedEntity = createCityEntity("New York", "NY");
+        savedEntity.setId(1L);
+        
+        when(repository.findByUid(uuid.toString())).thenReturn(Optional.of(existingEntity));
         when(repository.save(any(CityEntity.class))).thenReturn(savedEntity);
 
         // Act
@@ -174,6 +183,7 @@ class CityRepositoryAdapterTest {
 
         // Assert
         assertNotNull(result);
+        verify(repository).findByUid(uuid.toString());
         verify(repository).save(any(CityEntity.class));
     }
 

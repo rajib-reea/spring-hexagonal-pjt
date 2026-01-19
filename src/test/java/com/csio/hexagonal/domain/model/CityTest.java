@@ -70,7 +70,7 @@ class CityTest {
         CityId id = CityId.newId();
 
         // Act & Assert
-        assertThrows(InvalidStateNameException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             new State("   ");
         });
     }

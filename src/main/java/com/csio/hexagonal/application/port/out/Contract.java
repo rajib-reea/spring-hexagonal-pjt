@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-public interface ServiceContract<T, R, ID> {
+public interface Contract<T, R, ID> {
 
     R save(T entity, String token);
 

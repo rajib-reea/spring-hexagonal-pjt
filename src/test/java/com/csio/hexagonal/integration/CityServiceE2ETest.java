@@ -9,6 +9,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.ApplicationContext;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.reactive.server.WebTestClient;
@@ -31,6 +32,8 @@ import static org.junit.jupiter.api.Assertions.*;
 class CityServiceE2ETest {
 
     @Autowired
+    private ApplicationContext context;
+    
     private WebTestClient webTestClient;
 
     @Autowired
@@ -43,6 +46,8 @@ class CityServiceE2ETest {
     void setUp() {
         // Clean up database before each test
         cityRepository.deleteAll();
+        // Manually configure WebTestClient
+        this.webTestClient = WebTestClient.bindToApplicationContext(context).build();
     }
 
     @Test
@@ -149,7 +154,9 @@ class CityServiceE2ETest {
     void shouldApplyPaginationCorrectly() {
         // Arrange - Create 25 cities
         for (int i = 1; i <= 25; i++) {
-            createAndSaveCityEntity("City " + String.format("%02d", i), "ST" + i);
+            String cityName = "City" + getLetter(i);  // CityA, CityB, etc.
+            String stateName = "ST" + getLetter(i);
+            createAndSaveCityEntity(cityName, stateName);
         }
 
         // Act - Get first page
@@ -196,6 +203,17 @@ class CityServiceE2ETest {
                 .expectBody()
                 .jsonPath("$.meta.page").isEqualTo(3)
                 .jsonPath("$.data.length()").isEqualTo(5);
+    }
+    
+    // Helper method to get letters for city names
+    private String getLetter(int index) {
+        if (index <= 26) {
+            return String.valueOf((char) ('A' + index - 1));
+        } else {
+            int first = (index - 1) / 26;
+            int second = (index - 1) % 26;
+            return String.valueOf((char) ('A' + first - 1)) + (char) ('A' + second);
+        }
     }
 
     @Test
@@ -333,7 +351,9 @@ class CityServiceE2ETest {
         int numberOfCities = 10;
         
         for (int i = 1; i <= numberOfCities; i++) {
-            CityCreateRequest request = new CityCreateRequest("City " + i, "ST" + i);
+            String cityName = "City" + getLetter(i);  // CityA, CityB, etc.
+            String stateName = "ST" + getLetter(i);
+            CityCreateRequest request = new CityCreateRequest(cityName, stateName);
             
             webTestClient.post()
                     .uri(CITY_BASE_PATH)

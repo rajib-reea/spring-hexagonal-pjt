@@ -182,14 +182,20 @@ class CityRepositoryAdapterTest {
         // Arrange
         UUID uuid = UUID.randomUUID();
         String token = "test-token";
+        
+        CityEntity entity = new CityEntity();
+        entity.setId(1L);
+        entity.setUid(uuid.toString());
 
-        doNothing().when(repository).deleteById(uuid.toString());
+        when(repository.findByUid(uuid.toString())).thenReturn(Optional.of(entity));
+        doNothing().when(repository).deleteById(1L);
 
         // Act
         adapter.deleteByUid(uuid, token);
 
         // Assert
-        verify(repository).deleteById(uuid.toString());
+        verify(repository).findByUid(uuid.toString());
+        verify(repository).deleteById(1L);
     }
 
     @Test

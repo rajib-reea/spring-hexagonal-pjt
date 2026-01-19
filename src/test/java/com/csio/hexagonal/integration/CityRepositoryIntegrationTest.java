@@ -143,7 +143,9 @@ class CityRepositoryIntegrationTest {
     void shouldFindAllWithPagination() {
         // Arrange - Create 15 cities
         for (int i = 1; i <= 15; i++) {
-            adapter.save(new City(CityId.newId(), "City " + i, new State("ST" + i)), TEST_TOKEN);
+            String cityName = "City" + getLetter(i);  // CityA, CityB, etc.
+            String stateName = "ST" + getLetter(i);
+            adapter.save(new City(CityId.newId(), cityName, new State(stateName)), TEST_TOKEN);
         }
 
         // Act - Get page 1 with size 5
@@ -164,6 +166,17 @@ class CityRepositoryIntegrationTest {
         assertNotNull(page2);
         assertEquals(5, page2.content().size());
         assertEquals(2, page2.page());
+    }
+    
+    // Helper method to get letters for city names
+    private String getLetter(int index) {
+        if (index <= 26) {
+            return String.valueOf((char) ('A' + index - 1));
+        } else {
+            int first = (index - 1) / 26;
+            int second = (index - 1) % 26;
+            return String.valueOf((char) ('A' + first - 1)) + (char) ('A' + second);
+        }
     }
 
     @Test

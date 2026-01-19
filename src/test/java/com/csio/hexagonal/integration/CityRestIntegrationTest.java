@@ -62,7 +62,8 @@ class CityRestIntegrationTest {
                 .expectBody(SuccessResponseWrapper.class)
                 .value(response -> {
                     assertNotNull(response);
-                    assertEquals(200, response.status());
+                    assertTrue(response.success());
+                    assertEquals(200, response.statusCode());
                     assertNotNull(response.data());
                 });
     }
@@ -154,7 +155,8 @@ class CityRestIntegrationTest {
                 .expectBody(SuccessResponseWrapper.class)
                 .value(response -> {
                     assertNotNull(response);
-                    assertEquals(200, response.status());
+                    assertTrue(response.success());
+                    assertEquals(200, response.statusCode());
                     assertNotNull(response.data());
                 });
     }
@@ -199,7 +201,8 @@ class CityRestIntegrationTest {
                 .expectBody(PageResponseWrapper.class)
                 .value(response -> {
                     assertNotNull(response);
-                    assertEquals(200, response.status());
+                    assertTrue(response.success());
+                    assertEquals(200, response.statusCode());
                     assertNotNull(response.data());
                     assertNotNull(response.meta());
                     assertTrue(response.meta().totalElements() >= 3);
@@ -232,7 +235,8 @@ class CityRestIntegrationTest {
                 .expectBody(PageResponseWrapper.class)
                 .value(response -> {
                     assertNotNull(response);
-                    assertEquals(200, response.status());
+                    assertTrue(response.success());
+                    assertEquals(200, response.statusCode());
                     assertTrue(response.meta().totalElements() >= 2);
                 });
     }
@@ -280,7 +284,8 @@ class CityRestIntegrationTest {
                 .expectBody(PageResponseWrapper.class)
                 .value(response -> {
                     assertNotNull(response);
-                    assertEquals(200, response.status());
+                    assertTrue(response.success());
+                    assertEquals(200, response.statusCode());
                     assertTrue(response.meta().totalElements() >= 2);
                 });
     }
@@ -316,7 +321,8 @@ class CityRestIntegrationTest {
                 .expectBody(PageResponseWrapper.class)
                 .value(response -> {
                     assertNotNull(response);
-                    assertEquals(200, response.status());
+                    assertTrue(response.success());
+                    assertEquals(200, response.statusCode());
                     assertNotNull(response.data());
                 });
     }

@@ -35,7 +35,7 @@ public class GlobalExceptionHandler implements WebExceptionHandler {
                 Instant.now()
         );
 
-        ErrorResponseWrapper wrapper = new ErrorResponseWrapper(metadata.status().value(), detail);
+        ErrorResponseWrapper wrapper = new ErrorResponseWrapper(false, metadata.status().value(), detail);
 
         exchange.getResponse().getHeaders().setContentType(MediaType.APPLICATION_JSON);
         exchange.getResponse().setStatusCode(metadata.status());
@@ -44,7 +44,7 @@ public class GlobalExceptionHandler implements WebExceptionHandler {
         try {
             bytes = objectMapper.writeValueAsBytes(wrapper);
         } catch (Exception e) {
-            bytes = ("{\"status\":500,\"exception\":{\"message\":\"Internal error\"}}").getBytes();
+            bytes = ("{\"success\":false,\"statusCode\":500,\"exception\":{\"message\":\"Internal error\"}}").getBytes();
         }
 
         return exchange.getResponse()

@@ -16,6 +16,7 @@ public class ResponseHelper {
         );
 
         return new PageResponseWrapper<>(
+                true,
                 200,
                 meta,
                 pageResult.getContent()
@@ -23,6 +24,6 @@ public class ResponseHelper {
     }
 
     public static <T> SuccessResponseWrapper<T> success(T data) {
-        return new SuccessResponseWrapper<>(200, data);
+        return new SuccessResponseWrapper<>(true, 200, data);
     }
 }

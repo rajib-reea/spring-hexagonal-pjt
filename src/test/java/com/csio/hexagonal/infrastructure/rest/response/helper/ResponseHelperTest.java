@@ -25,7 +25,8 @@ class ResponseHelperTest {
 
         // Assert
         assertNotNull(result);
-        assertEquals(200, result.status());
+        assertTrue(result.success());
+        assertEquals(200, result.statusCode());
         assertEquals(data, result.data());
     }
 
@@ -39,7 +40,8 @@ class ResponseHelperTest {
 
         // Assert
         assertNotNull(result);
-        assertEquals(200, result.status());
+        assertTrue(result.success());
+        assertEquals(200, result.statusCode());
         assertEquals(dto, result.data());
     }
 
@@ -55,7 +57,8 @@ class ResponseHelperTest {
 
         // Assert
         assertNotNull(result);
-        assertEquals(200, result.status());
+        assertTrue(result.success());
+        assertEquals(200, result.statusCode());
         assertEquals(1, result.meta().page());
         assertEquals(10, result.meta().size());
         assertEquals(0L, result.meta().offset());
@@ -95,7 +98,8 @@ class ResponseHelperTest {
 
         // Assert
         assertNotNull(result);
-        assertEquals(200, result.status());
+        assertTrue(result.success());
+        assertEquals(200, result.statusCode());
         assertEquals(0L, result.meta().totalElements());
         assertTrue(result.data().isEmpty());
     }

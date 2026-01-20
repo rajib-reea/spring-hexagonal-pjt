@@ -219,7 +219,7 @@ class CityRepositoryAdapterTest {
         Page<CityEntity> page = new PageImpl<>(Arrays.asList(entity1, entity2), 
                 PageRequest.of(0, 10), 2);
 
-        when(repository.findAll(any(Pageable.class))).thenReturn(page);
+        when(repository.findAll(any(Specification.class), any(Pageable.class))).thenReturn(page);
 
         // Act
         PageResult<City> result = adapter.findAllWithPagination(1, 10, null, "name,asc", token);

@@ -115,9 +115,10 @@ public class CityRepositoryAdapter implements CityContract {
             }
 
             Pageable pageable = PageRequest.of(page-1, size, sortObj);
-            Page<CityEntity> result = (search == null || search.isBlank())
-                    ? repo.findAll(pageable)
-                    : repo.findByNameOrState(search, pageable);
+            
+            // Use CitySpecification for consistent filtering behavior
+            Specification<CityEntity> spec = CitySpecification.buildSpecification(search, null);
+            Page<CityEntity> result = repo.findAll(spec, pageable);
             
             // Map entities to domain models
             List<City> cities = result.getContent().stream()

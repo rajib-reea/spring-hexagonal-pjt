@@ -101,7 +101,7 @@ Hexagonal Architecture (Ports and Adapters) is an architectural pattern that **i
 ## 💻 Technology Stack
 
 ### Core Framework
-- **Java 25** - Latest LTS features including virtual threads
+- **Java 17** - LTS version with modern features
 - **Spring Boot 4.0.1** - Modern Spring framework
 - **Spring WebFlux** - Reactive web framework for non-blocking I/O
 - **Spring Data JPA** - Data persistence abstraction
@@ -998,7 +998,7 @@ Content-Type: application/json
 ## 🚀 Setup & Running
 
 ### Prerequisites
-- **Java 25** (JDK)
+- **Java 17** (JDK)
 - **Maven 3.8+**
 - **Git**
 
@@ -1469,7 +1469,7 @@ spring-hexagonal-pjt/
 ### Technology Versions
 | Technology | Version |
 |------------|---------|
-| Java | 25 |
+| Java | 17 |
 | Spring Boot | 4.0.1 |
 | Spring WebFlux | 6.2.1 |
 | Spring Data JPA | 4.0.1 |

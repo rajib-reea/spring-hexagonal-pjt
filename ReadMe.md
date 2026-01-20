@@ -44,10 +44,10 @@ Comprehensive testing documentation covering:
 ## Run the Project
 
 **Prerequisites:**
-- Java 25 or higher (LTS version recommended)
+- Java 17 or higher (LTS version recommended)
 - Maven 3.6 or higher
 
-This project uses JDK 21 and requires it to be available on your system.
+This project uses JDK 17 and requires it to be available on your system.
 
 **Quick Start:**
 ```bash

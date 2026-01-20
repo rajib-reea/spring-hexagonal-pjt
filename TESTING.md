@@ -372,9 +372,9 @@ mvn test
 mvn test -Dtest=CityRestIntegrationTest
 ```
 
-### Run With Java 25
+### Run With Java 17
 ```bash
-export JAVA_HOME=/usr/lib/jvm/temurin-25-jdk-amd64
+export JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64
 export PATH=$JAVA_HOME/bin:$PATH
 mvn test
 ```

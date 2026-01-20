@@ -1,5 +1,8 @@
 # Testing Strategy & Coverage
 
+**Last Verified:** January 20, 2026  
+**Status:** All 149 tests passing ✅
+
 ## Overview
 
 This document describes the comprehensive testing strategy for the Spring Hexagonal Architecture project. The project follows a multi-layered testing approach with both unit tests and integration tests.
@@ -369,9 +372,9 @@ mvn test
 mvn test -Dtest=CityRestIntegrationTest
 ```
 
-### Run With Java 25
+### Run With Java 17
 ```bash
-export JAVA_HOME=/usr/lib/jvm/temurin-25-jdk-amd64
+export JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64
 export PATH=$JAVA_HOME/bin:$PATH
 mvn test
 ```

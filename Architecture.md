@@ -437,7 +437,7 @@ sequenceDiagram
 - **API Documentation**: SpringDoc OpenAPI 3.0.0
 - **Mapping**: MapStruct 1.6.3
 - **Build Tool**: Maven
-- **Java Version**: JDK 25
+- **Java Version**: JDK 17
 
 ### Concurrency Model
 - **Virtual Threads**: Used for blocking I/O operations (database calls)

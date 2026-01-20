@@ -1,6 +1,6 @@
 package com.csio.hexagonal.application.service.command;
 
-import com.csio.hexagonal.application.port.out.CityServiceContract;
+import com.csio.hexagonal.application.port.out.CityContract;
 import com.csio.hexagonal.domain.exception.DuplicateCityException;
 import com.csio.hexagonal.domain.model.City;
 import com.csio.hexagonal.domain.policy.city.CityPolicy;
@@ -26,7 +26,7 @@ import static org.mockito.Mockito.*;
 class CreateCityCommandHandlerTest {
 
     @Mock
-    private CityServiceContract cityServiceContract;
+    private CityContract cityServiceContract;
 
     @Mock
     private CityPolicy cityPolicy;

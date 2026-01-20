@@ -1,6 +1,6 @@
 package com.csio.hexagonal.application.service.query;
 
-import com.csio.hexagonal.application.port.out.CityServiceContract;
+import com.csio.hexagonal.application.port.out.CityContract;
 import com.csio.hexagonal.domain.model.City;
 import com.csio.hexagonal.domain.vo.CityId;
 import com.csio.hexagonal.domain.vo.PageResult;
@@ -25,7 +25,7 @@ import static org.mockito.Mockito.*;
 class GetAllCityQueryHandlerTest {
 
     @Mock
-    private CityServiceContract cityServiceContract;
+    private CityContract cityServiceContract;
 
     private Executor virtualExecutor;
 

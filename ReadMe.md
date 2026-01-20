@@ -64,6 +64,7 @@ java -jar target/*.jar
 - The project uses Spring Boot with WebFlux and Spring Data JPA.
 - Logging is configured via `logback-spring.xml` and writes to `logs/app.log`.
 - API examples are defined in `CitySpec` and exposed with springdoc (Swagger UI).
+- Advanced filtering with JPA Specification pattern supports complex queries with AND/OR logic, multiple operators (EQUALS, LIKE, GT, LT, GTE, LTE), and filter groups.
 
 Feel free to edit this README; let me know if you want the tree in a different format.
 

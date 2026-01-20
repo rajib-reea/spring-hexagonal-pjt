@@ -8,7 +8,6 @@ import com.csio.hexagonal.infrastructure.store.persistence.procedure.AnotherProc
 import com.csio.hexagonal.infrastructure.store.persistence.procedure.DprSrcActInfoParam;
 import com.csio.hexagonal.infrastructure.store.persistence.procedure.ExampleProcParam;
 import com.csio.hexagonal.infrastructure.store.persistence.procedure.ParamValue;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,17 +18,17 @@ import java.util.Map;
 
 /**
  * Concrete adapter that extends AbstractStoredProcedureCaller and exposes multiple procedures.
- * Constructor expects a named EntityManager (procedureEntityManager).
+ * Constructor uses the default EntityManager from Spring Boot's JPA auto-configuration.
  */
 @Repository
 public class OracleJpaProcedureAdapter extends AbstractStoredProcedureCaller implements OracleProcedurePort {
 
-    public OracleJpaProcedureAdapter(@Qualifier("procedureEntityManager") EntityManager em) {
+    public OracleJpaProcedureAdapter(EntityManager em) {
         super(em);
     }
 
     @Override
-    @Transactional(readOnly = true, transactionManager = "procedureTransactionManager")
+    @Transactional(readOnly = true)
     public DprSrcActInfoResponse dprSrcActInfo(DprSrcActInfoQuery query, String token) {
         Map<String, Object> outputs = executeProcedure(
                 "CORPIB.dpr_src_act_info",
@@ -46,7 +45,7 @@ public class OracleJpaProcedureAdapter extends AbstractStoredProcedureCaller imp
      * Example: call MY_SCHEMA.MY_PROCEDURE using the ExampleProcParam enum.
      * Returns a map with OUT params and a key for the cursor (OUT_CURSOR).
      */
-    @Transactional(readOnly = true, transactionManager = "procedureTransactionManager")
+    @Transactional(readOnly = true)
     public Map<String, Object> callExampleProcedure(ParamValue... params) {
         return executeProcedure(
                 "MY_SCHEMA.MY_PROCEDURE",
@@ -59,7 +58,7 @@ public class OracleJpaProcedureAdapter extends AbstractStoredProcedureCaller imp
      * Another example: call a different procedure with its own enum.
      * Define AnotherProcParam enum implementing StoredProcedureParam similarly.
      */
-    @Transactional(readOnly = true, transactionManager = "procedureTransactionManager")
+    @Transactional(readOnly = true)
     public Map<String, Object> callAnotherProcedure(ParamValue... params) {
         return executeProcedure(
                 "MY_SCHEMA.ANOTHER_PROC",

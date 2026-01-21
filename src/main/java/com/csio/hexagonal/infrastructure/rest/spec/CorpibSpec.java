@@ -30,7 +30,7 @@ public class CorpibSpec {
 
     public static final String DPR_CBS_ACCOUNT_INFO_EXAMPLE_VALUE = """
             {
-                "actNumber": "08533000197"
+                "actNumber": "00234017795"
             }
             """;
 }

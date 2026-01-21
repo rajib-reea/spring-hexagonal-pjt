@@ -1,6 +1,6 @@
 # Oracle Procedure Call Flow (Current Branch)
 
-This document explains how the CORPIB stored procedure `dpr_src_act_info` is wired end-to-end in this branch using the default Spring Boot datasource.
+This document tracks the CORPIB stored procedure `STLBAS.dpr_cbs_account_info` using the default Spring Boot datasource.
 
 ## High-level flow (default datasource)
 
@@ -9,25 +9,25 @@ sequenceDiagram
     participant Client as Client/Postman/Swagger
     participant Router as CorpibRouter
     participant Handler as CorpibProcedureHandler
-    participant UseCase as DprSrcActInfoQueryHandler
+    participant UseCase as DprCbsAccountInfoQueryHandler
     participant Port as OracleProcedurePort
     participant Adapter as OracleJpaProcedureAdapter
     participant Caller as AbstractStoredProcedureCaller
     participant JPA as JPA EntityManager
-    participant SP as CORPIB.dpr_src_act_info
+    participant SP as STLBAS.dpr_cbs_account_info
 
-    Client->>Router: POST /api/v1/corpib/act-info
-    Router->>Handler: dprSrcActInfo(request)
-    Handler->>UseCase: query(DprSrcActInfoQuery)
-    UseCase->>Port: dprSrcActInfo(query)
-    Port->>Adapter: dprSrcActInfo(query)
+    Client->>Router: POST /api/v1/corpib/cbs-account-info
+    Router->>Handler: dprCbsAccountInfo(request)
+    Handler->>UseCase: query(DprCbsAccountInfoQuery)
+    UseCase->>Port: dprCbsAccountInfo(query)
+    Port->>Adapter: dprCbsAccountInfo(query)
     Adapter->>Caller: executeProcedure(...)
     Caller->>JPA: createStoredProcedureQuery(...)
     JPA->>SP: call procedure
-    SP-->>JPA: OUT params (actType, actName, actBal, status, code, message)
+    SP-->>JPA: OUT params (brancd, actype, acttit, curbal, code, message)
     JPA-->>Adapter: outputs map
-    Adapter-->>UseCase: DprSrcActInfoResponse
-    UseCase-->>Handler: DprSrcActInfoResponse
+    Adapter-->>UseCase: DprCbsAccountInfoResponse
+    UseCase-->>Handler: DprCbsAccountInfoResponse
     Handler-->>Client: SuccessResponseWrapper
 ```
 
@@ -36,21 +36,19 @@ sequenceDiagram
 Stored procedure signature:
 
 ```
-PROCEDURE dpr_src_act_info (
-    in_user_code  IN  VARCHAR2,
-    in_org_code   IN  VARCHAR2,
-    in_actnum     IN  VARCHAR2,
-    out_acttype   OUT VARCHAR2,
-    out_actname   OUT VARCHAR2,
-    out_actbal    OUT NUMBER,
-    out_status    OUT VARCHAR2,
-    out_code      OUT INTEGER,
-    out_message   OUT VARCHAR2
+PROCEDURE dpr_cbs_account_info (
+    in_actnum   IN  VARCHAR2,
+    out_brancd  OUT VARCHAR2,
+    out_actype  OUT VARCHAR2,
+    out_acttit  OUT VARCHAR2,
+    out_curbal  OUT NUMBER,
+    out_code    OUT VARCHAR2,
+    out_message OUT VARCHAR2
 )
 ```
 
 Procedure parameter metadata:
-- `src/main/java/com/csio/hexagonal/infrastructure/store/persistence/procedure/DprSrcActInfoParam.java`
+- `src/main/java/com/csio/hexagonal/infrastructure/store/persistence/procedure/DprCbsAccountInfoParam.java`
 
 Procedure execution (named parameters with a single adapter):
 - `src/main/java/com/csio/hexagonal/infrastructure/store/persistence/adapter/OracleJpaProcedureAdapter.java`
@@ -59,19 +57,17 @@ Procedure execution (named parameters with a single adapter):
 ## REST usage
 
 Endpoint:
-- `POST /api/v1/corpib/act-info`
+- `POST /api/v1/corpib/cbs-account-info`
 
-Request body (full fields):
+Request body:
 ```json
 {
-  "userCode": "USER001",
-  "orgCode": "ORG001",
   "actNum": "08533000197"
 }
 ```
 
 Notes:
-- `actNumber` is also accepted via `@JsonAlias` and mapped to `actNum`.
+- `actNumber` can be accepted via `@JsonAlias` and mapped to `actNum` if needed.
 
 ## Datasource configuration (current branch)
 
@@ -91,16 +87,16 @@ There is no datasource routing in this branch; Spring Boot auto-configures JPA f
   - `src/main/java/com/csio/hexagonal/infrastructure/rest/router/operation/corpib/CorpibRouter.java`
   - `src/main/java/com/csio/hexagonal/infrastructure/rest/handler/CorpibProcedureHandler.java`
   - `src/main/java/com/csio/hexagonal/infrastructure/rest/spec/CorpibSpec.java`
-  - `src/main/java/com/csio/hexagonal/infrastructure/rest/request/DprSrcActInfoRequest.java`
-  - `src/main/java/com/csio/hexagonal/infrastructure/rest/response/corpib/DprSrcActInfoResponse.java`
+  - `src/main/java/com/csio/hexagonal/infrastructure/rest/request/DprCbsAccountInfoRequest.java`
+  - `src/main/java/com/csio/hexagonal/infrastructure/rest/response/corpib/DprCbsAccountInfoResponse.java`
 - Application layer:
-  - `src/main/java/com/csio/hexagonal/application/service/query/DprSrcActInfoQueryHandler.java`
-  - `src/main/java/com/csio/hexagonal/application/service/query/DprSrcActInfoQuery.java`
+  - `src/main/java/com/csio/hexagonal/application/service/query/DprCbsAccountInfoQueryHandler.java`
+  - `src/main/java/com/csio/hexagonal/application/service/query/DprCbsAccountInfoQuery.java`
   - `src/main/java/com/csio/hexagonal/application/port/out/OracleProcedurePort.java`
 - Stored procedure execution:
   - `src/main/java/com/csio/hexagonal/infrastructure/store/persistence/adapter/OracleJpaProcedureAdapter.java`
   - `src/main/java/com/csio/hexagonal/infrastructure/store/persistence/procedure/AbstractStoredProcedureCaller.java`
-  - `src/main/java/com/csio/hexagonal/infrastructure/store/persistence/procedure/DprSrcActInfoParam.java`
+  - `src/main/java/com/csio/hexagonal/infrastructure/store/persistence/procedure/DprCbsAccountInfoParam.java`
 
 ## Summary
 

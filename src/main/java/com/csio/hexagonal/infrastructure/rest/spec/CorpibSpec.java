@@ -18,4 +18,19 @@ public class CorpibSpec {
                 "actNumber": "08533000197"
             }
             """;
+
+    public static final String DPR_CBS_ACCOUNT_INFO_SUMMARY =
+            "Get CBS account info from " + ENTITY;
+
+    public static final String DPR_CBS_ACCOUNT_INFO_DESCRIPTION =
+            "Calls STLBAS.dpr_cbs_account_info with account number input";
+
+    public static final String DPR_CBS_ACCOUNT_INFO_EXAMPLE_NAME =
+            "dpr_cbs_account_info Example";
+
+    public static final String DPR_CBS_ACCOUNT_INFO_EXAMPLE_VALUE = """
+            {
+                "actNumber": "08533000197"
+            }
+            """;
 }

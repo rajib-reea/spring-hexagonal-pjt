@@ -1,10 +1,13 @@
 package com.csio.hexagonal.infrastructure.store.persistence.adapter;
 
 import com.csio.hexagonal.application.port.out.OracleProcedurePort;
+import com.csio.hexagonal.application.service.query.DprCbsAccountInfoQuery;
 import com.csio.hexagonal.application.service.query.DprSrcActInfoQuery;
+import com.csio.hexagonal.infrastructure.rest.response.corpib.DprCbsAccountInfoResponse;
 import com.csio.hexagonal.infrastructure.rest.response.corpib.DprSrcActInfoResponse;
 import com.csio.hexagonal.infrastructure.store.persistence.procedure.AbstractStoredProcedureCaller;
 import com.csio.hexagonal.infrastructure.store.persistence.procedure.AnotherProcParam;
+import com.csio.hexagonal.infrastructure.store.persistence.procedure.DprCbsAccountInfoParam;
 import com.csio.hexagonal.infrastructure.store.persistence.procedure.DprSrcActInfoParam;
 import com.csio.hexagonal.infrastructure.store.persistence.procedure.ExampleProcParam;
 import com.csio.hexagonal.infrastructure.store.persistence.procedure.ParamValue;
@@ -39,6 +42,18 @@ public class OracleJpaProcedureAdapter extends AbstractStoredProcedureCaller imp
         );
 
         return mapDprSrcActInfo(outputs);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public DprCbsAccountInfoResponse dprCbsAccountInfo(DprCbsAccountInfoQuery query, String token) {
+        Map<String, Object> outputs = executeProcedure(
+                "STLBAS.dpr_cbs_account_info",
+                DprCbsAccountInfoParam.values(),
+                new ParamValue(DprCbsAccountInfoParam.IN_ACTNUM, normalizeIn(query.actNum()))
+        );
+
+        return mapDprCbsAccountInfo(outputs);
     }
 
     /**
@@ -88,6 +103,17 @@ public class OracleJpaProcedureAdapter extends AbstractStoredProcedureCaller imp
         String message = asString(outputs.get(DprSrcActInfoParam.OUT_MESSAGE.paramName()));
 
         return new DprSrcActInfoResponse(actType, actName, actBal, status, code, message);
+    }
+
+    private DprCbsAccountInfoResponse mapDprCbsAccountInfo(Map<String, Object> outputs) {
+        String brancd = asString(outputs.get(DprCbsAccountInfoParam.OUT_BRANCD.paramName()));
+        String actype = asString(outputs.get(DprCbsAccountInfoParam.OUT_ACTYPE.paramName()));
+        String acttit = asString(outputs.get(DprCbsAccountInfoParam.OUT_ACTTIT.paramName()));
+        BigDecimal curbal = asBigDecimal(outputs.get(DprCbsAccountInfoParam.OUT_CURBAL.paramName()));
+        String code = asString(outputs.get(DprCbsAccountInfoParam.OUT_CODE.paramName()));
+        String message = asString(outputs.get(DprCbsAccountInfoParam.OUT_MESSAGE.paramName()));
+
+        return new DprCbsAccountInfoResponse(brancd, actype, acttit, curbal, code, message);
     }
 
     private static String asString(Object value) {

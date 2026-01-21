@@ -16,6 +16,8 @@ public class CorpibRouter {
         return route()
                 .POST("/api/v1/corpib/act-info", handler::dprSrcActInfo,
                         ops -> ops.beanClass(CorpibProcedureHandler.class).beanMethod("dprSrcActInfo"))
+                .POST("/api/v1/corpib/cbs-account-info", handler::dprCbsAccountInfo,
+                        ops -> ops.beanClass(CorpibProcedureHandler.class).beanMethod("dprCbsAccountInfo"))
                 .build();
     }
 }

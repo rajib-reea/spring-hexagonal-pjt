@@ -29,6 +29,7 @@ public final class CityDtoMapper {
      */
     public static <T> PageResponseWrapper<T> toPageResponseWrapper(PageResult<T> pageResult) {
         return new PageResponseWrapper<>(
+                true,
                 200,
                 new PageResponseWrapper.Meta(
                         pageResult.page(),

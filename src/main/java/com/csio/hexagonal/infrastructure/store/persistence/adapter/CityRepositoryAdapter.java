@@ -2,7 +2,7 @@ package com.csio.hexagonal.infrastructure.store.persistence.adapter;
 
 import com.csio.hexagonal.application.service.query.CityFilterQuery;
 import com.csio.hexagonal.domain.vo.PageResult;
-import com.csio.hexagonal.application.port.out.CityServiceContract;
+import com.csio.hexagonal.application.port.out.CityContract;
 import com.csio.hexagonal.domain.model.City;
 import com.csio.hexagonal.infrastructure.store.persistence.entity.CityEntity;
 import com.csio.hexagonal.infrastructure.store.persistence.exception.DatabaseException;
@@ -21,7 +21,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Repository
-public class CityRepositoryAdapter implements CityServiceContract {
+public class CityRepositoryAdapter implements CityContract {
 
     private static final Logger log = LoggerFactory.getLogger(CityRepositoryAdapter.class);
 
@@ -72,7 +72,15 @@ public class CityRepositoryAdapter implements CityServiceContract {
     @Override
     public City update(UUID uid, City city, String token) {
         try {
+            // First find the existing entity by UID to get its database ID
+            Optional<CityEntity> existingEntity = repo.findByUid(uid.toString());
+            if (existingEntity.isEmpty()) {
+                throw new DatabaseException("City not found with UID: " + uid);
+            }
+            
             CityEntity entity = CityMapper.toEntity(city);
+            // Set the database ID from the existing entity to perform update instead of insert
+            entity.setId(existingEntity.get().getId());
             CityEntity saved = repo.save(entity);
             return CityMapper.toModel(saved);
         } catch (DataAccessException ex) {
@@ -84,7 +92,11 @@ public class CityRepositoryAdapter implements CityServiceContract {
     @Override
     public void deleteByUid(UUID uid, String token) {
         try {
-            repo.deleteById(uid.toString());
+            // Find the entity by UID first to get its database ID
+            Optional<CityEntity> entity = repo.findByUid(uid.toString());
+            if (entity.isPresent()) {
+                repo.deleteById(entity.get().getId());
+            }
         } catch (DataAccessException ex) {
             log.error("Database error while deleting City [uid={}]", uid, ex);
             throw new DatabaseException("Failed to delete City", ex);
@@ -103,9 +115,10 @@ public class CityRepositoryAdapter implements CityServiceContract {
             }
 
             Pageable pageable = PageRequest.of(page-1, size, sortObj);
-            Page<CityEntity> result = (search == null || search.isBlank())
-                    ? repo.findAll(pageable)
-                    : repo.findByNameOrState(search, pageable);
+            
+            // Use CitySpecification for consistent filtering behavior
+            Specification<CityEntity> spec = CitySpecification.buildSpecification(search, null);
+            Page<CityEntity> result = repo.findAll(spec, pageable);
             
             // Map entities to domain models
             List<City> cities = result.getContent().stream()

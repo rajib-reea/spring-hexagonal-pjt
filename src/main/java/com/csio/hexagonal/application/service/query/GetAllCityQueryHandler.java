@@ -2,7 +2,7 @@ package com.csio.hexagonal.application.service.query;
 
 import com.csio.hexagonal.domain.vo.PageResult;
 import com.csio.hexagonal.application.port.in.QueryUseCase;
-import com.csio.hexagonal.application.port.out.CityServiceContract;
+import com.csio.hexagonal.application.port.out.CityContract;
 import com.csio.hexagonal.domain.model.City;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,11 +18,11 @@ public class GetAllCityQueryHandler
     private static final Logger log =
             LoggerFactory.getLogger(GetAllCityQueryHandler.class);
 
-    private final CityServiceContract cityServiceContract;
+    private final CityContract cityServiceContract;
     private final Executor virtualExecutor;
 
     public GetAllCityQueryHandler(
-            CityServiceContract cityServiceContract,
+            CityContract cityServiceContract,
             Executor virtualExecutor
     ) {
         this.cityServiceContract = cityServiceContract;

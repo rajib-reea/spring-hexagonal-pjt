@@ -5,7 +5,7 @@ import com.csio.hexagonal.domain.vo.PageResult;
 import com.csio.hexagonal.domain.model.City;
 import java.util.UUID;
 
-public interface CityServiceContract extends ServiceContract<City, City, UUID> {
+public interface CityContract extends Contract<City, City, UUID> {
     PageResult<City> findAllWithPagination(int page, int size, String search, String sort, String token);
 
     PageResult<City> findAllWithFilters(CityFilterQuery request, String token);

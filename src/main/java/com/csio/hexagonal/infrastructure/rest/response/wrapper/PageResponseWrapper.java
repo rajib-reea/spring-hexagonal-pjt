@@ -3,7 +3,8 @@ package com.csio.hexagonal.infrastructure.rest.response.wrapper;
 import java.util.List;
 
 public record PageResponseWrapper<T>(
-        int status,
+        boolean success,
+        int statusCode,
         Meta meta,
         List<T> data
 ) {

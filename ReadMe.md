@@ -25,20 +25,30 @@ Technical architecture diagrams including:
 
 ### 🏗️ [Hexagonal Architecture Analysis →](HEXAGONAL_ARCHITECTURE_ANALYSIS.md)
 
-Technical architecture diagrams including:
-- Overall hexagonal architecture structure
-- Layer-by-layer component breakdown
-- Data flow sequence diagrams
-- Complete file organization
-- Key design patterns and principles
+Comprehensive architecture analysis report including:
+- Recent improvements and architectural changes
+- Hexagonal architecture compliance assessment (9.8/10)
+- Layer-by-layer detailed analysis
+- Design patterns implementation review
+- Recommendations and best practices
+- Dependency analysis and violations tracking
+
+### 🧪 [Testing Strategy & Coverage →](TESTING.md)
+
+Comprehensive testing documentation covering:
+- Testing strategy and approach (unit, integration, E2E)
+- Test coverage summary (149 total tests)
+- Layer-by-layer test breakdown
+- Test infrastructure and configuration
+- Running tests and best practices
 
 ## Run the Project
 
 **Prerequisites:**
-- Java 25 or higher (LTS version recommended)
+- Java 17 or higher (LTS version recommended)
 - Maven 3.6 or higher
 
-This project uses JDK 21 and requires it to be available on your system.
+This project uses JDK 17 and requires it to be available on your system.
 
 **Quick Start:**
 ```bash
@@ -55,6 +65,7 @@ java -jar target/*.jar
 - The project uses Spring Boot with WebFlux and Spring Data JPA.
 - Logging is configured via `logback-spring.xml` and writes to `logs/app.log`.
 - API examples are defined in `CitySpec` and exposed with springdoc (Swagger UI).
+- Advanced filtering with JPA Specification pattern supports complex queries with AND/OR logic, multiple operators (EQUALS, LIKE, GT, LT, GTE, LTE), and filter groups.
 
 Feel free to edit this README; let me know if you want the tree in a different format.
 
